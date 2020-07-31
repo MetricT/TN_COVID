@@ -7,7 +7,6 @@ library(zoo)
 ### What state are we interested in?
 my_state <- "Tennessee"
 
-
 ### Function to read Excel spreadsheets from URL's since the "readxl" package is
 ### behind the times
 read_excel_url <- function(url, ...) {
@@ -26,7 +25,8 @@ county_new_data <-
                                                "numeric", "numeric", "numeric",
                                                "numeric", "numeric", "numeric",
                                                "numeric", "numeric", "numeric",
-                                               "numeric", "numeric"))
+                                               "numeric", "numeric", "numeric",
+                                               "numeric"))
 
 county_new_df <-
   county_new_data %>%
@@ -40,7 +40,7 @@ new_cases <-
   pivot_wider(id_cols = "Date", names_from = "COUNTY", values_from = "NEW_CASES") %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(current_vars()))
+  select(Date, Total, sort(peek_vars()))
 
 new_tests <-
   county_new_df %>%
@@ -48,7 +48,7 @@ new_tests <-
   pivot_wider(id_cols = "Date", names_from = "COUNTY", values_from = "NEW_TESTS") %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(current_vars()))
+  select(Date, Total, sort(peek_vars()))
 
 new_deaths <-
   county_new_df %>%
@@ -56,7 +56,7 @@ new_deaths <-
   pivot_wider(id_cols = "Date", names_from = "COUNTY", values_from = "NEW_DEATHS") %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(current_vars()))
+  select(Date, Total, sort(peek_vars()))
 
 new_recovered <-
   county_new_df %>%
@@ -64,7 +64,7 @@ new_recovered <-
   pivot_wider(id_cols = "Date", names_from = "COUNTY", values_from = "NEW_RECOVERED") %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(current_vars()))
+  select(Date, Total, sort(peek_vars()))
 
 new_active <-
   county_new_df %>%
@@ -72,7 +72,7 @@ new_active <-
   pivot_wider(id_cols = "Date", names_from = "COUNTY", values_from = "NEW_ACTIVE") %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(current_vars()))
+  select(Date, Total, sort(peek_vars()))
 
 new_hospitalized <-
   county_new_df %>%
@@ -80,7 +80,7 @@ new_hospitalized <-
   pivot_wider(id_cols = "Date", names_from = "COUNTY", values_from = "NEW_HOSPITALIZED") %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(current_vars()))
+  select(Date, Total, sort(peek_vars()))
 
 data <-
            (new_cases         %>% select(Date, Total) %>% rename(new_cases = Total)) %>%

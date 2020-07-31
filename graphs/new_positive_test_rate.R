@@ -45,8 +45,6 @@ graph_new_positive_test_rate <-
   geom_point(data = ntpd_df, shape = 19, size = 0.5,
              aes(x = as.Date(Date), y = Positive_Rate), color = "black") +
 
-#  geom_vline(xintercept = as.Date("2020-06-12"), linetype = "dotted") +
-
   geom_line(data = ntpd_df, size = line_thickness, color = graph_color,
             aes(x = as.Date(Date), y = trend)) +
 

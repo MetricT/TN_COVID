@@ -122,23 +122,14 @@ new_deaths_tib <-
 
 model_new_cases_age <-
   new_cases_tib %>%
-  model(
-    STL(avg_age ~ trend(window = 7) +
-                  season(period = "1 week") +
-                  season(period = "1 month")
-    )
-  ) %>%
+  model(STL(avg_age ~ trend())) %>%
   components()
 
 model_new_cases_age %>% autoplot()
 
 model_new_deaths_age <-
   new_deaths_tib %>%
-  model(
-    STL(avg_age ~ trend(window = 7) +
-          season(period = "1 week")
-    )
-  ) %>%
+  model(STL(avg_age ~ trend(window = 30))) %>%
   components()
 
 model_new_deaths_age %>% autoplot()
@@ -154,6 +145,49 @@ cases_deaths_tsib <-
   as_tibble()
 
 fit <- lm(deaths_trend ~ cases_trend, data = cases_deaths_tsib)
+
+cases_deaths_tib <- 
+  cases_deaths_tsib %>% 
+  rename(cases_value = cases, 
+         deaths_value = deaths) %>% 
+  pivot_longer(-date, 
+               names_to = c("cases_deaths", "value_trend"), 
+               names_sep = "_", 
+               values_to = "values") %>%
+  pivot_wider(id_cols = c("date", "cases_deaths"),
+              names_from = "value_trend",
+              values_from = "values")
+
+g_cases_and_deaths_facet <-
+  ggplot(data = cases_deaths_tib, aes(x = as.Date(date))) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  
+  geom_point(cases_deaths_tib, 
+             mapping = aes(y = value), size = 1, shape = 19, alpha = 0.2) +
+  
+  geom_line(cases_deaths_tib, 
+            mapping = aes(y = trend), size = 1.3) +
+  
+  geom_hline(data = subset(cases_deaths_tib, cases_deaths == "cases"), 
+             aes(yintercept = 38.7), linetype = "dotted") + 
+  
+  geom_text(data = subset(cases_deaths_tib, cases_deaths == "cases"), 
+            aes(x = as.Date("2020-06-15"), y = 39),
+            size = 4,
+            label = "Median Age of TN = 38.7 yrs") +
+
+  facet_wrap(~ cases_deaths, scales = "free_y") +
+  
+  labs(title = "Average Age of TN New Cases and New Deaths", x = "Date", y = "Average Age")
+
+print(g_cases_and_deaths_facet)
+
+
+
+
+### Old graph
+
 
 g_cases_and_deaths <-
   ggplot(data = cases_deaths_tsib, aes(x = as.Date(date))) +
@@ -176,4 +210,4 @@ g_cases_and_deaths <-
 
   labs(title = "Average Age of TN New Cases (blue) and New Deaths (red)", x = "Date", y = "Average Age")
 
-print(g_cases_and_deaths)
+#print(g_cases_and_deaths)

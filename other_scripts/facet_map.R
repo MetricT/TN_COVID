@@ -12,7 +12,7 @@ library(broom)
 ### https://github.com/nytimes/covid-19-data
 ###
 spreadsheet <-
-  "../nytimes_covid-19-data/us-states.csv" %>%
+  "../Datasets/nytimes/covid-19-data/us-states.csv" %>%
   read_csv(col_names = TRUE, col_types = "Dccdd")
 
 ### How big should our SMA window be?

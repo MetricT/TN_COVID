@@ -17,7 +17,7 @@
 
 ### Set the Census API key.   Get your API key at https://api.census.gov/data/key_signup.html
 api_key_census <- "PUT_YOUR_CENSUS_API_KEY_HERE"
-
+api_key_census <- "b1238ec79c5b2b6c81e13d7dda124758e945b82c"
 ### Let's start by cleaning the environment, it currently causes the graphs
 ### some problems if the environment is already populated
 ###
@@ -33,7 +33,8 @@ rm(list = ls()[!ls() %in% keepme])
 ### Load the necessary libraries
 packages <- c("tidyverse", "dplyr", "readxl", "ggplot2", "sf", "rgeos", "TTR",
               "scales", "cowplot", "viridis", "gridExtra", "tidycensus", "zoo",
-              "RColorBrewer", "reshape2", "tidyselect", "feasts", "fable", "tsibble")
+              "RColorBrewer", "reshape2", "tidyselect", "feasts", "fable", 
+              "lubridate", "tsibble")
 
 new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages, quiet = TRUE)
@@ -81,7 +82,7 @@ if (!exists("data_loaded")) {
   ###        yet.   Test the data, and die if it's yesterday's data.   Obviously
   ###        comment this out if you *want* yesterday's data
   data_date <- age_ss_df  %>% select(DATE) %>% arrange(DATE) %>% tail(n = 1) %>% pull()
-  if (data_date < Sys.Date()) {
+  if (data_date < Sys.Date() & (Sys.time() %>% hour()) >= 14) {
     stop("TN Spreadsheets haven't been updated with today's data yet.  Last data from ", data_date, ". Exiting...")
   }
 
@@ -111,7 +112,7 @@ if (!exists("data_loaded")) {
     read_excel_url(county_school_url) %>%
     mutate(DATE = as.Date(DATE))
 }
-  
+
 
 ################################################################################
 ### Cleaning the state's data...
