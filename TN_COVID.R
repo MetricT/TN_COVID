@@ -16,7 +16,7 @@
 ################################################################################
 
 ### Set the Census API key.   Get your API key at https://api.census.gov/data/key_signup.html
-api_key_census = "PUT_YOUR_CENSUS_API_KEY_HERE"
+api_key_census <- "PUT_YOUR_CENSUS_API_KEY_HERE"
 
 ### Let's start by cleaning the environment, it currently causes the graphs
 ### some problems if the environment is already populated
@@ -64,19 +64,19 @@ if (!exists("data_loaded")) {
 
   ### URL's for the spreadsheets
   url_root <- "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/Public-Dataset-"
-  
+
   age_ss_url             <- paste(url_root, "Age.XLSX", sep = "")
   age_by_county_url      <- paste(url_root, "Daily-County-Age-Group.XLSX", sep = "")
   daily_case_url         <- paste(url_root, "Daily-Case-Info.XLSX", sep = "")
   county_new_url         <- paste(url_root, "County-New.XLSX", sep = "")
   race_ethnicity_sex_url <- paste(url_root, "RaceEthSex.XLSX", sep = "")
   county_school_url      <- paste(url_root, "Daily-County-School.XLSX", sep = "")
-  
+
   ### Read 'em in...
-  age_ss_df <- 
-    read_excel_url(age_ss_url) %>% 
+  age_ss_df <-
+    read_excel_url(age_ss_url) %>%
     mutate(DATE = as.Date(DATE))
-  
+
   ### Test:  If the data is old, it means TN hasn't updated their spreadsheets
   ###        yet.   Test the data, and die if it's yesterday's data.   Obviously
   ###        comment this out if you *want* yesterday's data
@@ -84,32 +84,31 @@ if (!exists("data_loaded")) {
   if (data_date < Sys.Date()) {
     stop("TN Spreadsheets haven't been updated with today's data yet.  Last data from ", data_date, ". Exiting...")
   }
-  
-  age_by_county_df  <- 
-    read_excel_url(age_by_county_url) %>% 
+
+  age_by_county_df  <-
+    read_excel_url(age_by_county_url) %>%
     mutate(DATE = as.Date(DATE))
 
-  daily_case_df <- 
-    read_excel_url(daily_case_url) %>% 
+  daily_case_df <-
+    read_excel_url(daily_case_url) %>%
     mutate(DATE = as.Date(DATE))
-  
-  
-  county_new_df <- 
-    read_excel_url(county_new_url, 
-                   col_types = c("date", "text", "numeric", "numeric", 
-                                 "numeric", "numeric", "numeric", "numeric", 
-                                 "numeric", "numeric", "numeric", "numeric", 
-                                 "numeric", "numeric", "numeric", "numeric", 
-                                 "numeric", "numeric", "numeric", "numeric", 
+
+  county_new_df <-
+    read_excel_url(county_new_url,
+                   col_types = c("date", "text", "numeric", "numeric",
+                                 "numeric", "numeric", "numeric", "numeric",
+                                 "numeric", "numeric", "numeric", "numeric",
+                                 "numeric", "numeric", "numeric", "numeric",
+                                 "numeric", "numeric", "numeric", "numeric",
                                  "numeric", "numeric")) %>%
     mutate(DATE = as.Date(DATE))
-  
-  race_ethnicity_sex_df <- 
-    read_excel_url(race_ethnicity_sex_url) %>% 
+
+  race_ethnicity_sex_df <-
+    read_excel_url(race_ethnicity_sex_url) %>%
     mutate(Date = as.Date(Date))
 
-  county_school_df <- 
-    read_excel_url(county_school_url) %>% 
+  county_school_df <-
+    read_excel_url(county_school_url) %>%
     mutate(DATE = as.Date(DATE))
 }
   
@@ -124,11 +123,11 @@ if (!exists("data_loaded")) {
 ### The script below interpolates the data for the missing data by taking the
 ### values for the day before/after and splitting the difference.
 ###
-### Comment out the line below if you want to use the "pure" data without my 
+### Comment out the line below if you want to use the "pure" data without my
 ### fix
 source("patch.R")
 
-### Todo:  Add a patch for data earlier than the state's DB.   Just straight 
+### Todo:  Add a patch for data earlier than the state's DB.   Just straight
 ### data, no fancy patch
 
 
@@ -137,7 +136,7 @@ source("patch.R")
 ################################################################################
 
 ### For the map, we only want the latest total for each county.
-non_county_fields <- c("Date", "Total", "Other_State_Country", "Out of State", 
+non_county_fields <- c("Date", "Total", "Other_State_Country", "Out of State",
                        "Pending", "Unknown", "ERROR!!!")
 
 ### All counties
@@ -204,16 +203,16 @@ if (isTRUE(ENABLE_LOG_SCALE)) {
 ### Adjusting the geometry of our map
 ################################################################################
 
-map_counties_fips <- 
+map_counties_fips <-
   map_counties %>%
-  as_tibble() %>% 
+  as_tibble() %>%
   mutate(value = tolower(value)) %>%
-  left_join(fips_codes %>% 
-              as_tibble() %>% 
+  left_join(fips_codes %>%
+              as_tibble() %>%
               filter(state_code == "47") %>%
-              select(county_code, county) %>% 
+              select(county_code, county) %>%
               mutate(county = gsub(" County", "", county)) %>%
-              mutate(county = tolower(county)), 
+              mutate(county = tolower(county)),
             by = c("value" = "county"))
 
 ### Use TidyCensus to pull population data as well as map geometry
@@ -226,7 +225,7 @@ county_acs <-
           year        = 2018,
           geometry    = TRUE,
           cache_table = TRUE) %>%
-  rename(POP2018 = estimate) 
+  rename(POP2018 = estimate)
 
 ### Split the Census data apart into a map...
 tn_map_df <-
@@ -276,158 +275,158 @@ counties$nudge_x[counties$County == "Lake"]      <-  0.030
 counties$nudge_x[counties$County == "Moore"]     <-  0.005
 counties$nudge_y[counties$County == "Moore"]     <-  0.015
 
-
 ################################################################################
 ### Take our imported data from the spreadsheets, and split it into some useful
 ### structures to make manipulation simpler.    The maps/graphs pull data from
-### these structures, so you should be able to "port" this script to other states
-### or localities by loading the data and munging it into a compatible tibble.
+### these structures, so you should be able to "port" this script to other
+### states or localities by loading the data and munging it into a compatible 
+### tibble.
 ################################################################################
 
 ### Now build data tibbles compatible with the rest of the script
 total_cases_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, TOTAL_CASES) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("TOTAL_CASES")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("TOTAL_CASES")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 new_cases_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, NEW_CASES) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("NEW_CASES")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("NEW_CASES")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 total_deaths_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, TOTAL_DEATHS) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-01")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("TOTAL_DEATHS")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("TOTAL_DEATHS")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 new_deaths_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, NEW_DEATHS) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-01")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("NEW_DEATHS")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("NEW_DEATHS")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 total_recovered_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, TOTAL_RECOVERED) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-10")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("TOTAL_RECOVERED")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("TOTAL_RECOVERED")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 new_recovered_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, NEW_RECOVERED) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-10")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("NEW_RECOVERED")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("NEW_RECOVERED")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 total_active_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, TOTAL_ACTIVE) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-03-31")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("TOTAL_ACTIVE")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("TOTAL_ACTIVE")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 new_active_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, NEW_ACTIVE) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-03-31")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("NEW_ACTIVE")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("NEW_ACTIVE")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 total_hospitalized_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, TOTAL_HOSPITALIZED) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-27")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("TOTAL_HOSPITALIZED")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("TOTAL_HOSPITALIZED")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
 new_hospitalized_tib <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, NEW_HOSPITALIZED) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-27")) %>%
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>% 
-  pivot_wider(names_from = c("COUNTY"), 
-              values_from = c("NEW_HOSPITALIZED")) %>% 
+  arrange(Date, COUNTY) %>%
+  pivot_wider(names_from = c("COUNTY"),
+              values_from = c("NEW_HOSPITALIZED")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
@@ -435,7 +434,7 @@ new_hospitalized_tib <-
 
 ################################################################################
 ### Build tertiary data structures.  These use the *_tib structures above and
-### should be "abstracted" from whatever the actual data source is, so you 
+### should be "abstracted" from whatever the actual data source is, so you
 ### shouldn't have to change them if you port it to a new source.
 ################################################################################
 
@@ -652,26 +651,26 @@ age_df <-
 ################################################################################
 ### Load maps
 ################################################################################
-#source("maps/new_active_percapita_last7.R")   #
-#source("maps/new_cases_percapita_last7.R")    #
-#source("maps/new_deaths_percapita.R")         #
-#source("maps/total_active_percapita_last7.R") #
-#source("maps/total_recovered_percapita.R")    #
-#source("maps/total_cases.R")           # Total confirmed cases
-#source("maps/total_deaths.R")          # Total deaths
-#source("maps/new_deaths.R")            # New deaths
-#source("maps/new_active.R")            # New active
-#source("maps/total_active.R")          # Total active
-#source("maps/total_recovered.R")       # Total recovered
-#source("maps/new_recovered.R")         # New recovered
-#source("maps/case_fatality_rate.R")    # Case Fatality Rate
-#source("maps/total_cases_percapita.R") # Total confirmed cases
-source("maps/total_deaths_percapita.R") # Total deaths per 100k
-source("maps/total_active_percapita.R") # Total active per 100k
-source("maps/new_cases.R")              # New confirmed cases
-source("maps/new_deaths_last7.R")       # New deaths last 7 days
-source("maps/new_recovered_last7.R")    # New recovered last 7 days
-source("maps/new_active_last7.R")       # New active last 7 days
+#source("maps/new_active_percapita_last7.R")   # New active per capita last 7
+#source("maps/new_cases_percapita_last7.R")    # New cases per capita last 7
+#source("maps/new_deaths_percapita.R")         # New deaths per capita
+#source("maps/total_active_percapita_last7.R") # Total active per capita last 7
+#source("maps/total_recovered_percapita.R")    # Total recoverd per capita last 7
+#source("maps/total_cases.R")                  # Total confirmed cases
+#source("maps/total_deaths.R")                 # Total deaths
+#source("maps/new_deaths.R")                   # New deaths
+#source("maps/new_active.R")                   # New active
+#source("maps/total_active.R")                 # Total active
+#source("maps/total_recovered.R")              # Total recovered
+#source("maps/new_recovered.R")                # New recovered
+#source("maps/case_fatality_rate.R")           # Case Fatality Rate
+#source("maps/total_cases_percapita.R")        # Total confirmed cases
+source("maps/total_deaths_percapita.R")        # Total deaths per 100k
+source("maps/total_active_percapita.R")        # Total active per 100k
+source("maps/new_cases.R")                     # New confirmed cases
+source("maps/new_deaths_last7.R")              # New deaths last 7 days
+source("maps/new_recovered_last7.R")           # New recovered last 7 days
+source("maps/new_active_last7.R")              # New active last 7 days
 
 
 ################################################################################
