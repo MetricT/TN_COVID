@@ -18,7 +18,7 @@ new_cases_percapita_last14 <-
       new_cases_last14 >  1.0 ~ "#ce703a",
     ))
 
-this_map <- 
+this_map <-
   county_acs %>%
   mutate(NAME = str_replace(NAME, " County, Tennessee", "")) %>%
   select(GEOID, NAME, POP2018) %>%
@@ -26,7 +26,7 @@ this_map <-
   left_join(new_cases_percapita_last14, by = "County") %>%
   mutate(new_cases_percapita_last14 = new_cases_last14 / POP2018)
 
-new_cases_percapita_last14_label <- 
+new_cases_percapita_last14_label <-
   (scale * this_map$new_cases_percapita_last14) %>% round(2)
 new_cases_percapita_last14_label[new_cases_percapita_last14_label == 0] <- ""
 
@@ -35,7 +35,7 @@ new_cases_percapita_last14_label[new_cases_percapita_last14_label == 0] <- ""
 frac <- 0.5 * max(this_map$new_cases_percapita_last14)
 this_map$textcolor = if_else(this_map$new_cases_percapita_last14 > frac, "white", "black")
 
-map_new_cases_percapita_last14 <- 
+map_new_cases_percapita_last14 <-
   ggplot(this_map) +
   theme_void() +
   theme(legend.title = element_blank()) +
@@ -55,6 +55,4 @@ map_new_cases_percapita_last14 <-
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-
-print(map_new_cases_percapita_last14)
-  
+#print(map_new_cases_percapita_last14)

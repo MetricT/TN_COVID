@@ -11,7 +11,7 @@ counties$textcolor = if_else(counties$new_recovered >= frac, "white", "black")
 new_recovered_label  <- counties$new_recovered
 new_recovered_label[new_recovered_label == 0] <- ""
 
-map_new_recovered <- 
+map_new_recovered <-
   ggplot(counties) +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -29,4 +29,4 @@ map_new_recovered <-
             nudge_y = counties$nudge_y) +
   labs(title = "New Recovered") +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_new_recovered)
+#print(map_new_recovered)

@@ -24,4 +24,4 @@ map_total_recovered <- ggplot(counties) +
             nudge_y = counties$nudge_y) +
   labs(title = "Total Recovered") +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_total_recovered)
+#print(map_total_recovered)

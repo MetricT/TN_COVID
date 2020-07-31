@@ -12,12 +12,12 @@ new_recovered_last7 <-
   summarize(new_recovered_last7 = sum(value)) %>%
   rename(County = key)
 
-counties <- 
+counties <-
   counties %>%
   left_join(new_recovered_last7, by = "County")
 
-num <- 
-  new_recovered_last7$new_recovered_last7 %>% 
+num <-
+  new_recovered_last7$new_recovered_last7 %>%
   sum() %>%
   format(big.mark = ",", scientific = FALSE)
 
@@ -29,7 +29,7 @@ new_recovered_last7_label[new_recovered_last7_label == 0] <- ""
 frac <- 0.04 * (counties$new_recovered_last7 %>% na.omit() %>% max())
 counties$textcolor = if_else(counties$new_recovered_last7 > frac, "white", "black")
 
-map_new_recovered_last7 <- 
+map_new_recovered_last7 <-
   ggplot(counties) +
   theme_void() +
   theme(legend.title = element_blank()) +
@@ -45,5 +45,4 @@ map_new_recovered_last7 <-
             nudge_y = counties$nudge_y) +
   labs(title = paste("New Recovered Last 7 Days: ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_new_recovered_last7)
-
+#print(map_new_recovered_last7)

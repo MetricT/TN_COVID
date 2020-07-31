@@ -35,11 +35,10 @@ map_new_active <-
             nudge_y = counties$nudge_y) +
   labs(title = tps_title) +
   #scale_fill_gradientn(colours = map_palette)
-  
+
   scale_fill_gradient2(midpoint = 0,
                        trans = "pseudo_log",
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-  
-print(map_new_active)
+#print(map_new_active)

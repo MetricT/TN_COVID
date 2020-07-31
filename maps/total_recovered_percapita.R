@@ -9,7 +9,7 @@ counties$textcolor = if_else(counties$total_recovered_percapita >= frac, "white"
 total_recovered_percapita_label  <- counties$total_recovered_percapita
 total_recovered_percapita_label[total_recovered_percapita_label == 0] <- ""
 
-map_total_recovered_percapita <- 
+map_total_recovered_percapita <-
   ggplot(counties) +
   theme_void() +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -27,4 +27,4 @@ map_total_recovered_percapita <-
             nudge_y = counties$nudge_y) +
   labs(title = "Total Recovered Percent of Population") +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_total_recovered_percapita)
+#print(map_total_recovered_percapita)

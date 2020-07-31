@@ -15,7 +15,7 @@ new_active_percapita_last7 <-
   summarize(new_active_last7 = sum(value)) %>%
   rename(County = key)
 
-this_map <- 
+this_map <-
   county_acs %>%
   mutate(NAME = str_replace(NAME, " County, Tennessee", "")) %>%
   select(GEOID, NAME, POP2018) %>%
@@ -24,7 +24,7 @@ this_map <-
   left_join(new_active_percapita_last7, by = "County") %>%
   mutate(new_active_percapita_last7 = new_active_last7 / POP2018)
 
-new_active_percapita_last7_label <- 
+new_active_percapita_last7_label <-
   (scale * this_map$new_active_percapita_last7) %>% round(2)
 new_active_percapita_last7_label[new_active_percapita_last7_label == 0] <- ""
 
@@ -36,7 +36,7 @@ this_map$textcolor = if_else(this_map$new_active_percapita_last7 > frac, "white"
 ### Grey out counties that haven't shown any new active in the 7 day period
 null_counties <- counties %>% filter(new_active_last7 == 0)
 
-map_new_active_percapita_last7 <- 
+map_new_active_percapita_last7 <-
   ggplot(this_map) +
   theme_void() +
   theme(legend.title = element_blank()) +
@@ -57,5 +57,4 @@ map_new_active_percapita_last7 <-
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-
-print(map_new_active_percapita_last7)
+#print(map_new_active_percapita_last7)

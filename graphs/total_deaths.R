@@ -16,4 +16,4 @@ graph_total_deaths <- ggplot(data = deaths_data) +
   graph_log10_opts2 +
   labs(title = paste("Total Deaths: ", tail(deaths_data$total_deaths, n = 1),  sep = ""),
        x = "", y = "")
-print(graph_total_deaths)
+#print(graph_total_deaths)

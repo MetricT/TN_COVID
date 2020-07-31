@@ -3,7 +3,7 @@
 ################################################################################
 
 ntpd_df <-
-  county_new_df %>% 
+  county_new_df %>%
   filter(DATE >= as.Date("2020-03-31")) %>%
   select(DATE, POS_TESTS, NEG_TESTS) %>%
   group_by(DATE) %>%
@@ -11,13 +11,13 @@ ntpd_df <-
             total_neg_tests = sum(NEG_TESTS)) %>%
   mutate(Positive_Rate = total_pos_tests / (total_pos_tests + total_neg_tests)) %>%
   mutate(Date = as.Date(DATE)) %>%
-  select(-DATE) 
+  select(-DATE)
 
 total_pos_num <- ntpd_df %>% arrange(Date) %>% tail(n = 1) %>% select("Positive_Rate") %>% pull() %>% format(big.mark = ",", scientific = FALSE)
 
 posrate_title <- paste("Total Positive Test Rate: ", round(100 * as.double(total_pos_num), 1), "%", sep = "")
 
-graph_total_positive_test_rate <- 
+graph_total_positive_test_rate <-
   ggplot(data = ntpd_df, aes(x = as.Date(Date), y = D_TN)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -28,16 +28,16 @@ graph_total_positive_test_rate <-
   geom_point(data = ntpd_df, shape = 19, size = line_thickness,
              aes(x = as.Date(Date), y = Positive_Rate), color = "black") +
 
-  geom_vline(xintercept = as.Date("2020-06-12"), linetype = "dotted") + 
-  
+  geom_vline(xintercept = as.Date("2020-06-12"), linetype = "dotted") +
+
   annotate("text", size = 4, angle = 90,
            label = "Change in State Reporting", x = as.Date("2020-06-12"), y = 0.07) +
-  
-  scale_x_date(#date_breaks = "3 days", 
+
+  scale_x_date(#date_breaks = "3 days",
     date_labels = "%m/%d") +
-  scale_y_continuous(labels = scales::comma) + 
+  scale_y_continuous(labels = scales::comma) +
   #scale_y_continuous(limits = c(100, 650)) +
   #  graph_log10_opts1 +
   #  graph_log10_opts2 +
   labs(title = posrate_title, x = "", y = "")
-print(graph_total_positive_test_rate)
+#print(graph_total_positive_test_rate)

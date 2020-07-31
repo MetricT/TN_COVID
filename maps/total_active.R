@@ -27,4 +27,4 @@ map_total_active <-
             nudge_y = counties$nudge_y) +
   labs(title = tps_title) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_total_active)
+#print(map_total_active)

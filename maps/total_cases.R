@@ -30,4 +30,4 @@ map_total_cases <-
             nudge_y = counties$nudge_y) +
   labs(title = "Total Cases") +
   scale_fill_gradientn(colours = map_palette)
-print(map_total_cases)
+#print(map_total_cases)

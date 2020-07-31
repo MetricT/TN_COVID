@@ -12,10 +12,10 @@ graph_total_hospital <- ggplot(data = hospital_data, aes(x = as.Date(date), y = 
   theme(legend.title = element_blank()) +
   theme(legend.position = "none") +
   geom_bar(stat = "identity", fill = graph_color) +
-  scale_x_date(#date_breaks = "3 days", 
+  scale_x_date(#date_breaks = "3 days",
                date_labels = "%m/%d") +
   labs(title = paste("TN Hospitalizations: ", hospital_num, sep = ""), x = "", y = "")
-print(graph_total_hospital)
+#print(graph_total_hospital)
 
 ### Filter out the first data point
 hospital_data <-
@@ -28,7 +28,7 @@ SMA <- hospital_data$total_hospitalized %>% SMA(n = 7) %>% tail(n = 1) %>% round
 
 totalhos_title <- paste("Total Hospitalizations: ", hospital_num, ", SMA: ", SMA, sep = "")
 
-graph_total_hospital <- 
+graph_total_hospital <-
   ggplot(data = hospital_data, aes(x = as.Date(date), y = total_hospitalized)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -36,14 +36,14 @@ graph_total_hospital <-
   theme(axis.text.x = element_text(hjust = 0.8)) +
   theme(legend.title = element_blank()) +
   theme(legend.position = "none") +
-  
-  geom_point(data = hospital_data, shape = 19, size = 0.5, 
+
+  geom_point(data = hospital_data, shape = 19, size = 0.5,
              aes(x = as.Date(date), y = total_hospitalized), color = "black") +
-  
+
   geom_line(data = hospital_data, color = graph_color, size = line_thickness,
-            aes(x = as.Date(date) - 3, y = SMA(total_hospitalized, n = 7))) + 
-  
-  scale_x_date(#date_breaks = "3 days", 
+            aes(x = as.Date(date) - 3, y = SMA(total_hospitalized, n = 7))) +
+
+  scale_x_date(#date_breaks = "3 days",
     date_labels = "%m/%d") +
   labs(title = totalhos_title, x = "", y = "")
-print(graph_total_hospital)
+#print(graph_total_hospital)

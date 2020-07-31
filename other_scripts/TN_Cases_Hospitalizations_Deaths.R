@@ -20,15 +20,15 @@ read_excel_url <- function(url, ...) {
 url_root <- "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/"
 county_new_url <- paste(url_root, "Public-Dataset-County-New.XLSX", sep = "")
 county_new_data <-
-  read_excel_url(county_new_url, col_types = c("date", "text", "numeric", 
-                                               "numeric", "numeric", "numeric", 
-                                               "numeric", "numeric", "numeric", 
-                                               "numeric", "numeric", "numeric", 
-                                               "numeric", "numeric", "numeric", 
-                                               "numeric", "numeric", "numeric", 
-                                               "numeric", "numeric")) 
+  read_excel_url(county_new_url, col_types = c("date", "text", "numeric",
+                                               "numeric", "numeric", "numeric",
+                                               "numeric", "numeric", "numeric",
+                                               "numeric", "numeric", "numeric",
+                                               "numeric", "numeric", "numeric",
+                                               "numeric", "numeric", "numeric",
+                                               "numeric", "numeric"))
 
-county_new_df <- 
+county_new_df <-
   county_new_data %>%
   select(DATE, COUNTY, NEW_CASES, NEW_TESTS, NEW_DEATHS, NEW_RECOVERED, NEW_ACTIVE, NEW_HOSPITALIZED) %>%
   mutate(Date = as.Date(DATE)) %>%
@@ -96,8 +96,7 @@ data <-
   mutate(new_active_trend       = new_active       %>% ts(frequency = 7) %>% mstl() %>% trendcycle()) %>%
   mutate(new_recovered_trend    = new_recovered    %>% ts(frequency = 7) %>% mstl() %>% trendcycle()) %>%
   mutate(new_hospitalized_trend = new_hospitalized %>% ts(frequency = 7) %>% mstl() %>% trendcycle()) %>%
-  
-  
+
   as_tsibble(index = "Date") %>%
   rename(date = Date) %>%
   filter(date >= as.Date("2020-03-10"))
@@ -114,45 +113,43 @@ g_cases_and_deaths <-
   ggplot(data = data) +
   theme_bw() +
   theme(legend.position = "none") +
-  
+
   geom_point(aes(x = as.Date(date), y = new_cases, color = "Cases"), size = 1, shape = 19, alpha = 0.4) +
   geom_line(aes(x = as.Date(date), y = new_cases_trend, color = "Cases"), size = 1.3) +
 
   #geom_point(aes(x = as.Date(date), y = new_deaths * scale, color = "Deaths"), size = 1, shape = 19, alpha = 0.4) +
   #geom_line(aes(x = as.Date(date), y = new_deaths_trend * scale, color = "Deaths"), size = 1.3) +
-  
+
   #geom_point(aes(x = as.Date(date), y = new_hospitalized * 15.5, color = "Hospitalized"), size = 1, shape = 19, alpha = 0.4) +
   #geom_line(aes(x = as.Date(date), y = new_hospitalized_trend * 15.5, color = "Hospitalized"), size = 1.3) +
-  
+
   #geom_point(aes(x = as.Date(date), y = new_tests * 0.05, color = "Tests"), size = 1, shape = 19, alpha = 0.4) +
   #geom_line(aes(x = as.Date(date), y = new_tests_trend * 0.05, color = "Tests"), size = 1.3) +
-  
-  geom_point(aes(x = as.Date(date), y = new_active * 1, color = "Tests"), size = 1, shape = 19, alpha = 0.4) +
-  geom_line(aes(x = as.Date(date), y = new_active_trend * 1, color = "Tests"), size = 1.3) +  
 
-  
+  geom_point(aes(x = as.Date(date), y = new_active * 1, color = "Tests"), size = 1, shape = 19, alpha = 0.4) +
+  geom_line(aes(x = as.Date(date), y = new_active_trend * 1, color = "Tests"), size = 1.3) +
+
   scale_color_manual(values =  c("Cases" = "steelblue2",
                                  "Deaths" = "firebrick2",
                                  "Hospitalized" = "goldenrod2",
                                  "Tests" =  "green",
                                  "Recovered" = "orange",
                                  "Active"    = "pink")) +
-  
-  geom_vline(xintercept = as.Date(current_date) - lag_st, linetype = "dotted") + 
-  
-  labs(title = paste(my_state, " New Cases and New Deaths data from ", current_date, " lagged by ", lag_st, " days", sep = ""), x = "Date", y = "New Cases (blue)") + 
+
+  geom_vline(xintercept = as.Date(current_date) - lag_st, linetype = "dotted") +
+
+  labs(title = paste(my_state, " New Cases and New Deaths data from ", current_date, " lagged by ", lag_st, " days", sep = ""), x = "Date", y = "New Cases (blue)") +
   scale_y_continuous(labels = scales::comma,
                      sec.axis = sec_axis(~ . / scale,
                                          name = "New Deaths (red)",
                                          labels = scales::comma))
-  
 print(g_cases_and_deaths)
 
 ### Now let's do CFR...
 #data <-
 #  data %>%
 #  mutate(cfr = new_deaths / new_cases) %>%
-#  mutate(cfr_trend = new_deaths_trend / new_cases_trend) #cfr %>% ts(frequency = 7) %>% mstl() %>% trendcycle()) 
+#  mutate(cfr_trend = new_deaths_trend / new_cases_trend) #cfr %>% ts(frequency = 7) %>% mstl() %>% trendcycle())
 #
 #data$cfr_trend[is.na(data$cfr)] <- NA
 #
@@ -160,13 +157,13 @@ print(g_cases_and_deaths)
 #  ggplot(data = data, aes(x = as.Date(date))) +
 #  theme_bw() +
 #  theme(legend.position = "none") +
-#  
-#  geom_point(aes(y = cfr, color = "Cases"), size = 1, shape = 19, alpha = 0.4) +
+#
+#  geom_point(aes(y = cfr, color = "Cases"), size = 1, shape = 19, alpha = 0.4)
 #  geom_line(aes(y = cfr_trend, color = "Cases"), size = 1.3) +
 #
-#  labs(title = paste(my_state, " Case Fatality Rate as of ", current_date, " lagged by ", lag_st, " days", sep = ""), 
-#       x = "Date", 
-#       y = "Case Fatality Rate") + 
+#  labs(title = paste(my_state, " Case Fatality Rate as of ", current_date, " lagged by ", lag_st, " days", sep = ""),
+#       x = "Date",
+#       y = "Case Fatality Rate") +
 #  scale_y_continuous(labels = scales::percent, limits = c(0.01, 0.03))
 #
 #print(g_cfr)

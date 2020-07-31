@@ -6,7 +6,7 @@ scale_txt <- "%"
 
 counties <-
   counties %>%
-  mutate(total_active_percapita = 
+  mutate(total_active_percapita =
            round(scale * total_active / POP2018, 2)) %>%
   mutate(
     color_code = case_when(
@@ -32,10 +32,10 @@ map_total_active_percapita <-
   theme(legend.position = "none") +
   geom_sf(data = counties$geometry, size = geom_thickness,
           aes(fill = counties$total_active_percapita)) +
-  
+
 #  geom_sf(data = counties$geometry, size = geom_thickness, fill = counties$color_code) +
 #          aes(fill = counties$color_code)) +
-  
+
   geom_text(data = counties, size = map_fontsize, fontface = "bold",
             color = counties$textcolor,
             aes(x     = county_centers$x,
@@ -46,4 +46,4 @@ map_total_active_percapita <-
   labs(title = paste("Total active cases as % of population: ", num, "%", sep = "")) +
   #labs(title = paste("Total Active per ", scale_txt, ": ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette[map_palette != "#7f7f7f"], trans = "pseudo_log")
-print(map_total_active_percapita)
+#print(map_total_active_percapita)

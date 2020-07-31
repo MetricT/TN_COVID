@@ -30,4 +30,4 @@ map_total_deaths_percapita <- ggplot(counties) +
             nudge_y = counties$nudge_y) +
   labs(title = paste("Total Deaths per ", scale_txt, ": ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette)
-print(map_total_deaths_percapita)
+#print(map_total_deaths_percapita)

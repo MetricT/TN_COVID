@@ -3,7 +3,7 @@
 ################################################################################
 
 ntpd_df <-
-  county_new_df %>% 
+  county_new_df %>%
   filter(DATE >= as.Date("2020-03-31")) %>%
   select(DATE, POS_TESTS, NEG_TESTS) %>%
   group_by(DATE) %>%
@@ -15,15 +15,15 @@ ntpd_df <-
   rename(Date = DATE) %>%
   mutate(Date = as.Date(Date))
 
-ntpd_trend <- 
-  ntpd_df %>% 
+ntpd_trend <-
+  ntpd_df %>%
   select(Date, Positive_Rate) %>%
   filter(!is.na(Positive_Rate)) %>%
-  as_tsibble(index = "Date") %>% 
+  as_tsibble(index = "Date") %>%
   tsibble::fill_gaps() %>%
   na.locf() %>%
-  model(STL(Positive_Rate ~ trend() + season(window = "periodic"))) %>% 
-  components() %>% 
+  model(STL(Positive_Rate ~ trend() + season(window = "periodic"))) %>%
+  components() %>%
   select(Date, trend)
 
 ntpd_df <-  ntpd_df %>% left_join(ntpd_trend, by = "Date")
@@ -34,7 +34,7 @@ SMA         <- (ntpd_df %>% arrange(Date) %>% tail(n = 1) %>% pull("trend") * 10
 
 posrate_title <- paste("Positive New Test Rate: ", new_pos_num, "%, SMA: ", SMA, "%", sep = "")
 
-graph_new_positive_test_rate <- 
+graph_new_positive_test_rate <-
   ggplot(data = ntpd_df, aes(x = as.Date(Date), y = D_TN)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -45,13 +45,13 @@ graph_new_positive_test_rate <-
   geom_point(data = ntpd_df, shape = 19, size = 0.5,
              aes(x = as.Date(Date), y = Positive_Rate), color = "black") +
 
-#  geom_vline(xintercept = as.Date("2020-06-12"), linetype = "dotted") + 
-  
+#  geom_vline(xintercept = as.Date("2020-06-12"), linetype = "dotted") +
+
   geom_line(data = ntpd_df, size = line_thickness, color = graph_color,
             aes(x = as.Date(Date), y = trend)) +
-  
+
   scale_x_date(date_labels = "%m/%d") +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0.025, 0.125)) +
   labs(title = posrate_title, x = "", y = "")
 
-print(graph_new_positive_test_rate)
+#print(graph_new_positive_test_rate)

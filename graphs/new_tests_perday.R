@@ -3,7 +3,7 @@
 ################################################################################
 
 ntpd_df <-
-  county_new_df %>% 
+  county_new_df %>%
   select(DATE, COUNTY, NEW_TESTS) %>%
   arrange(COUNTY) %>%
   pivot_wider(id_cols = "DATE", names_from = "COUNTY", values_from = "NEW_TESTS") %>%
@@ -29,15 +29,15 @@ graph_new_tests_perday <- ggplot(data = ntpd_df, aes(x = as.Date(Date), y = D_TN
   theme(legend.position = "none") +
   geom_point(data = ntpd_df, shape = 19, size = 0.5,
              aes(x = as.Date(Date), y = D_TN), color = "black") +
-  
+
   geom_line(data = ntpd_df, color = graph_color, size = line_thickness,
             aes(x = as.Date(Date) - 3, y = SMA(D_TN, n = 7))) +
-  
-  scale_x_date(#date_breaks = "3 days", 
+
+  scale_x_date(#date_breaks = "3 days",
     date_labels = "%m/%d") +
-  scale_y_continuous(labels = scales::comma) + 
+  scale_y_continuous(labels = scales::comma) +
   #scale_y_continuous(limits = c(100, 650)) +
   #  graph_log10_opts1 +
   #  graph_log10_opts2 +
   labs(title = newntpd_title, x = "", y = "")
-print(graph_new_tests_perday)
+#print(graph_new_tests_perday)

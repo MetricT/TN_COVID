@@ -3,8 +3,8 @@
 ################################################################################
 
 ### The current number of total cases
-total_num <- 
-  cases_data %>% 
+total_num <-
+  cases_data %>%
   tail(n = 1) %>%
   pull("total_cases") %>%
   format(big.mark = ",", scientific = FALSE)
@@ -25,10 +25,10 @@ graph_total_cases <- ggplot(data = cases_data) +
   geom_point(data = cases_data, shape = 19, size = 0.5,
              aes(x = as.Date(date), y = total_cases), color = "black") +
   geom_line(data = cases_data, color = graph_color, size = 1.0,
-            aes(x = as.Date(date) - 3, y = SMA(total_cases, n = 7))) + 
+            aes(x = as.Date(date) - 3, y = SMA(total_cases, n = 7))) +
   scale_x_date(date_breaks = "3 days", date_labels = "%m/%d") +
-  #  geom_vline(xintercept = as.Date("2020-03-15")) + 
+  #  geom_vline(xintercept = as.Date("2020-03-15")) +
   graph_log10_opts1 +
   graph_log10_opts2 +
   labs(title = paste("Total Cases: ", total_num, sep = ""), x = "", y = "")
-print(graph_total_cases)
+#print(graph_total_cases)

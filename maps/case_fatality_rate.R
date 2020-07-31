@@ -23,22 +23,22 @@ d_cfr <-
 
 case_fatality_rate <-
   d_cfr %>%
-  tail(n = 7) %>% 
-  select(-Date, -Total) %>% 
-  gather() %>% 
-  group_by(key) %>% 
-  summarize(case_fatality_rate = mean(value)) %>% 
+  tail(n = 7) %>%
+  select(-Date, -Total) %>%
+  gather() %>%
+  group_by(key) %>%
+  summarize(case_fatality_rate = mean(value)) %>%
   rename(County = key)
 
 counties <-
   counties %>%
   left_join(case_fatality_rate, by = "County")
 
-counties$case_fatality_rate <- ifelse(counties$total_cases != 0, 
+counties$case_fatality_rate <- ifelse(counties$total_cases != 0,
                                       counties$total_deaths / counties$total_cases,
                                       NA)
 
-avg_cfr = (100 * (counties$total_deaths %>% na.omit() %>% sum()) / 
+avg_cfr = (100 * (counties$total_deaths %>% na.omit() %>% sum()) /
                  (counties$total_cases %>% na.omit() %>% sum())) %>% round(2)
 
 counties$case_fatality_rate[is.nan(counties$case_fatality_rate)] <- 0
@@ -67,5 +67,4 @@ map_case_fatality_rate <- ggplot(counties) +
             nudge_y = counties$nudge_y) +
   labs(title = cfr_title) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-
-print(map_case_fatality_rate)
+#print(map_case_fatality_rate)

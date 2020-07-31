@@ -26,4 +26,4 @@ map_new_deaths_percapita <- ggplot(counties) +
             nudge_y = counties$nudge_y) +
   labs(title = "New Deaths per 100k") +
   scale_fill_gradientn(colours = map_palette)
-print(map_new_deaths_percapita)
+#print(map_new_deaths_percapita)

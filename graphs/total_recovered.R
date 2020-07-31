@@ -13,9 +13,9 @@ graph_total_recover <- ggplot(data = recovered_data, aes(x = as.Date(date), y = 
   theme(legend.position = "none") +
     geom_point(data = recovered_data, shape = 19, size = 0.5,
              aes(x = as.Date(date), y = total_recovered), color = "black") +
-  scale_x_date(#date_breaks = "3 days", 
+  scale_x_date(#date_breaks = "3 days",
                date_labels = "%m/%d") +
   #  graph_log10_opts1 +
   #  graph_log10_opts2 +
   labs(title = paste("Total Recovered: ", new_num, sep = ""), x = "", y = "")
-print(graph_total_recover)
+#print(graph_total_recover)

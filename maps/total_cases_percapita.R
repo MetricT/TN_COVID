@@ -30,6 +30,4 @@ map_total_cases_percapita <- ggplot(counties) +
             nudge_y = counties$nudge_y) +
   labs(title = paste("Total Cases per ", scale_txt, sep = "")) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_total_cases_percapita)
-
-
+#print(map_total_cases_percapita)

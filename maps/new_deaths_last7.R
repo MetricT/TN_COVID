@@ -15,8 +15,8 @@ counties <-
   counties %>%
   left_join(new_deaths_last7, by = "County")
 
-num <- 
-  new_deaths_last7$new_deaths_last7 %>% 
+num <-
+  new_deaths_last7$new_deaths_last7 %>%
   sum() %>%
   format(big.mark = ",", scientific = FALSE)
 
@@ -40,7 +40,7 @@ new_deaths_last7_label[new_deaths_last7_label == 0] <- ""
 frac <- 0.5 * (counties$new_deaths_last7 %>% na.omit() %>% max())
 counties$textcolor = if_else(counties$new_deaths_last7 > frac, "white", "black")
 
-map_new_deaths_last7 <- 
+map_new_deaths_last7 <-
   ggplot(counties) +
   theme_void() +
   theme(legend.title = element_blank()) +
@@ -57,4 +57,4 @@ map_new_deaths_last7 <-
             nudge_y = counties$nudge_y) +
   labs(title = paste("New Deaths Last 7 Days: ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_new_deaths_last7)
+#print(map_new_deaths_last7)

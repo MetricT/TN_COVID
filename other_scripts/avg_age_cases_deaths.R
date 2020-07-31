@@ -9,7 +9,7 @@ library(feasts)
 library(zoo)
 
 new_cases_age <-
-  age_df %>% 
+  age_df %>%
   select(DATE, AGE, TOTAL_CASES) %>%
   mutate(AGE = gsub(" years", "", AGE)) %>%
   filter(AGE != "Pending") %>%
@@ -33,28 +33,26 @@ new_cases_age <-
                          name == "61-70" ~ 65,
                          name == "71-80" ~ 75,
                          name == "81+"   ~ 85,
-    )) 
-                         
+    ))
 
 new_cases_tib <-
   tibble(date = as.Date(character()),
          avg_age = double())
 
 for (date in as.Date(new_cases_age$DATE) %>% unique()) {
-  
+
   ### Pluck out the entries for this data
-  new_cases_ss <- 
+  new_cases_ss <-
     new_cases_age %>%
     filter(DATE == as.Date(date, origin = "1970-01-01")) %>%
     mutate(avg_age_contr = avg_age * value ) %>%
     mutate()
-  
+
   this_avg_age <- sum(new_cases_ss$avg_age_contr) / sum(new_cases_ss$value)
-  
+
   new_cases_tib <-
     new_cases_tib %>%
     add_row(date = as.Date(date, origin = "1970-01-01"), avg_age=this_avg_age)
-  
 }
 
 new_cases_tib <-
@@ -93,27 +91,26 @@ new_deaths_age <-
       name == "81+"   ~ 85,
     )) %>%
   arrange(DATE)
-  
 
 new_deaths_tib <-
   tibble(date = as.Date(character()),
          avg_age = double())
-  
+
 for (date in as.Date(new_deaths_age$DATE) %>% unique()) {
-  
+
   ### Pluck out the entries for this data
-  new_deaths_ss <- 
+  new_deaths_ss <-
     new_deaths_age %>%
     filter(DATE == as.Date(date, origin = "1970-01-01")) %>%
     mutate(avg_age_contr = avg_age * value ) %>%
     mutate()
-  
+
   this_avg_age <- sum(new_deaths_ss$avg_age_contr) / sum(new_deaths_ss$value)
 
   new_deaths_tib <-
     new_deaths_tib %>%
     add_row(date = as.Date(date, origin = "1970-01-01"), avg_age=this_avg_age)
-    
+
 }
 
 new_deaths_tib <-
@@ -162,21 +159,21 @@ g_cases_and_deaths <-
   ggplot(data = cases_deaths_tsib, aes(x = as.Date(date))) +
   theme_bw() +
   theme(legend.position = "none") +
-  
+
   geom_point(aes(y = cases, color = "Cases"), size = 1, shape = 19, alpha = 0.2) +
   geom_line(aes(y = cases_trend, color = "Cases"), size = 1.3) +
 
   geom_point(aes(y = deaths, color = "Deaths"), size = 1, shape = 19, alpha = 0.2) +
   geom_line(aes(y = deaths_trend, color = "Deaths"), size = 1.3)+
-  
+
   geom_hline(yintercept = 38.7, linetype = "dotted") + 
-  
+
   annotate("text", size = 4, color = "goldenrod4",
            label = "Median Age of TN = 38.7 yrs", x = as.Date("2020-06-01"), y = 40) +
-  
+
   scale_color_manual(values =  c("Cases" = "steelblue2",
                                  "Deaths" = "firebrick2")) +
-  
+
   labs(title = "Average Age of TN New Cases (blue) and New Deaths (red)", x = "Date", y = "Average Age")
 
 print(g_cases_and_deaths)

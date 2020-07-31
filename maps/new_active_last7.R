@@ -16,8 +16,8 @@ counties <-
   counties %>%
   left_join(new_active_last7, by = "County")
 
-num <- 
-  new_active_last7$new_active_last7 %>% 
+num <-
+  new_active_last7$new_active_last7 %>%
   sum() %>%
   format(big.mark = ",", scientific = FALSE)
 
@@ -41,7 +41,7 @@ new_active_last7_label[new_active_last7_label == 0] <- ""
 frac <- 0.2 * (counties$new_active_last7 %>% na.omit() %>% max())
 counties$textcolor = if_else(counties$new_active_last7 > frac, "white", "black")
 
-map_new_active_last7 <- 
+map_new_active_last7 <-
   ggplot(counties) +
   theme_void() +
   theme(legend.title = element_blank()) +
@@ -63,6 +63,4 @@ map_new_active_last7 <-
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-
-  
-  print(map_new_active_last7)
+#print(map_new_active_last7)

@@ -17,4 +17,4 @@ graph_total_new <- ggplot(data = cases_data, aes(x = total_cases, y = new_cases)
   scale_y_log10(labels = scales::comma_format(accuracy = 1), breaks = c(1, 10, 100, 1000)) +
   annotation_logticks() +
   labs(title = "Log(New vs Total)", x = "", y = "")
-print(graph_total_new)
+#print(graph_total_new)

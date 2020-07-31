@@ -34,7 +34,7 @@ west_tn <- c(
 cheatham_adjacent <-
   c("Cheatham", "Robertson", "Davidson", "Williamson", "Dickson", "Montgomery")
 
-cheatham_superset <- 
+cheatham_superset <-
   c(cheatham_adjacent, "Rutherford", "Wilson", "Sumner", "Stewart", "Houston",
     "Humphreys", "Hickman", "Maury")
 

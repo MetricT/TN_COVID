@@ -25,4 +25,4 @@ map_new_deaths <- ggplot(counties) +
             nudge_y = counties$nudge_y) +
   labs(title = "New Deaths") +
   scale_fill_gradientn(colours = map_palette)
-print(map_new_deaths)
+#print(map_new_deaths)

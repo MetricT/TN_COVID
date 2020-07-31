@@ -27,13 +27,13 @@ graph_age_cases <-
   theme(axis.text.x = element_text(hjust = 0.8)) +
   geom_age_orientation +
   geom_bar(stat = "identity", fill = graph_color) +
-  geom_text(data = age_data, aes(x = cases_statewide, y = age), 
+  geom_text(data = age_data, aes(x = cases_statewide, y = age),
             nudge_x = 0.05 * max(age_data$cases_statewide),
             label = age_data$cases_statewide %>% format(big.mark = ",", scientific = FALSE)) +
   scale_x_continuous(labels = scales::comma,
                      sec.axis = sec_axis(~ . / sum(age_data$cases_statewide), labels = scales::percent_format(accuracy = 1))) +
   labs(title = paste("TN Cases by Age: ", num_inf, sep = ""), x = "", y = "")
-print(graph_age_cases)
+#print(graph_age_cases)
 
 ################################################################################
 ### Graph:  COVID-19 Deaths by Age
@@ -46,11 +46,11 @@ graph_age_deaths <- ggplot(data = age_data, aes(x = deaths_statewide, y = age)) 
   theme(axis.text.x = element_text(hjust = 0.8)) +
   geom_age_orientation +
   geom_bar(stat = "identity", fill = graph_color) +
-  geom_text(data = age_data, aes(x = deaths_statewide, y = age), 
+  geom_text(data = age_data, aes(x = deaths_statewide, y = age),
             nudge_x = 0.05 * max(age_data$deaths_statewide),
             label = age_data$deaths_statewide %>% format(big.mark = ",", scientific = FALSE)) +
   scale_x_continuous(labels = scales::comma,
                      sec.axis = sec_axis(~ . / sum(age_data$deaths_statewide), labels = scales::percent)) +
   labs(title = paste("TN Deaths by Age: ", num_dea, sep = ""), x = "", y = "")
-print(graph_age_deaths)
+#print(graph_age_deaths)
 

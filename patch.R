@@ -231,7 +231,7 @@ race_ethnicity_sex_df <-
   race_ethnicity_sex_df %>%
   bind_rows(race_ethnicity_sex_df_patch_06_28_2020) %>%
   arrange(Date)
-  
+
 daily_case_df <-
   daily_case_df %>%
   bind_rows(daily_case_df_patch_06_28_2020) %>%

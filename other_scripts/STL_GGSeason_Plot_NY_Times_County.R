@@ -1,4 +1,4 @@
-### Pull new confirmed cases and analyze data to find days or times of month 
+### Pull new confirmed cases and analyze data to find days or times of month
 ### with relatively lower/higher risk of infection.
 
 library(tidyverse)
@@ -13,12 +13,12 @@ my_state <- "Tennessee"
 my_county <- "Davidson"
 
 ### How many days between being infected and being confirmed.   According
-### to Harvard, it's 4-5 days, according to WHO it's 5-6 days, so I choose 5.  
+### to Harvard, it's 4-5 days, according to WHO it's 5-6 days, so I choose 5.
 ### We have "date of confirmed infection", so if we subtract 5 days, it should
 ### give us a good estimate about the date the infection occurs.
 lag <- 6
 
-### Pull cases data from the NY Times repo below and change the path 
+### Pull cases data from the NY Times repo below and change the path
 ### as needed
 ###
 ### https://github.com/nytimes/covid-19-data
@@ -44,8 +44,8 @@ data <-
 model_cases <-
   data %>%
   model(
-    STL(new_cases ~ trend(window = 7) + 
-                    season(period = "week") + 
+    STL(new_cases ~ trend(window = 7) +
+                    season(period = "week") +
                     season(period = "month"), iterations = 100)
   ) %>% components()
 
@@ -94,8 +94,8 @@ footer <- ggdraw() + draw_label(footer_string, size = 10)
 ### Let's smoosh it all together in one graph
 p_period <- plot_grid(g_week, g_month, nrow = 1, ncol = 2, align = "hv", axis = "lbrt")
 plot_grid(title,
-          g_stl, 
-          p_period, 
+          g_stl,
+          p_period,
           footer,
           axis = "lbrt", nrow = 4, ncol = 1, rel_heights = c(0.1, 1, 0.5, 0.05),
           align = "hv")

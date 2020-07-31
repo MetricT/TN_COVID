@@ -13,7 +13,7 @@ total_active_percapita_last7 <-
   summarize(total_active_last7 = sum(value)) %>%
   rename(County = key)
 
-this_map <- 
+this_map <-
   county_acs %>%
   mutate(NAME = str_replace(NAME, " County, Tennessee", "")) %>%
   select(GEOID, NAME, POP2018) %>%
@@ -21,7 +21,7 @@ this_map <-
   left_join(total_active_percapita_last7, by = "County") %>%
   mutate(total_active_percapita_last7 = total_active_last7 / POP2018)
 
-total_active_percapita_last7_label <- 
+total_active_percapita_last7_label <-
   (scale * this_map$total_active_percapita_last7) %>% round(2)
 total_active_percapita_last7_label[total_active_percapita_last7_label == 0] <- ""
 
@@ -30,7 +30,7 @@ total_active_percapita_last7_label[total_active_percapita_last7_label == 0] <- "
 frac <- 0.5 * max(this_map$total_active_percapita_last7)
 this_map$textcolor = if_else(this_map$total_active_percapita_last7 > frac, "white", "black")
 
-map_total_active_percapita_last7 <- 
+map_total_active_percapita_last7 <-
   ggplot(this_map) +
   theme_void() +
   theme(legend.title = element_blank()) +
@@ -51,6 +51,4 @@ map_total_active_percapita_last7 <-
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-
-print(map_total_active_percapita_last7)
-  
+#print(map_total_active_percapita_last7)

@@ -2,9 +2,9 @@
 ### Map of new COVID-19 cases
 ################################################################################
 
-num <- 
-  new_cases_tib %>% 
-  tail(n = 1) %>% 
+num <-
+  new_cases_tib %>%
+  tail(n = 1) %>%
   pull("Total") %>%
   format(big.mark = ",", scientific = FALSE)
 
@@ -37,4 +37,4 @@ map_new_cases <-
             nudge_y = counties$nudge_y) +
   labs(title = paste("New Cases: ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-print(map_new_cases)
+#print(map_new_cases)
