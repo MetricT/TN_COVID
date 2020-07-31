@@ -16,6 +16,9 @@ If you have the time and inclination (or are a masochist)...   The BLAS (a libra
 
 R is also tragically single-threaded (you *can* use threads, but it's painful compared to other languages), so don't worry about trying to throw an expensive 16 core CPU at it for speedups.    Your bog-standard Haswell 4-core is sufficient. 
 
+# How do I run it?
+
+Start up RStudio, load TN_COVID.R, and hit the "source" button.  
 
 # What can you do to help?   Ideas...
 
