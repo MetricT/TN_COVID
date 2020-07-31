@@ -33,5 +33,6 @@ The code *works*, but it started off doing a small limited graph or two after I'
 
 * (Harder) Make a Shiny server so people can assemble an infographic with the stats they want to see. 
 
+# Example render using defaults:
 
-
+![Example render from July 21](https://i.imgur.com/mbukJTK.png)
