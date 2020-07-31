@@ -24,7 +24,7 @@ api_key_census = "PUT_YOUR_CENSUS_API_KEY_HERE"
 ### We don't want to erase these, it speeds things up considerably...
 keepme <- c("covid_data", "cases_df", "deaths_df", "hospital_df",
             "testres_df", "testrates_df", "recover_df", "age_df",
-            "demographics_df", "data_loaded")
+            "demographics_df", "data_loaded", "api_key_census")
 rm(list = ls()[!ls() %in% keepme])
 
 # If I want to generate charts for an earlier day, uncomment this
@@ -126,7 +126,7 @@ if (!exists("data_loaded")) {
 ###
 ### Comment out the line below if you want to use the "pure" data without my 
 ### fix
-source("TN_COVID_new/patch.R")
+source("patch.R")
 
 ### Todo:  Add a patch for data earlier than the state's DB.   Just straight 
 ### data, no fancy patch
@@ -160,7 +160,7 @@ location <- "Tennessee"
 ### Or if you would like to do some other subset, uncomment the "source"
 ### below and then add the lines for your desired subset
 
-source("TN_COVID_new/geography.R")
+source("geography.R")
 
 #graph_counties <- nashville_msa
 #map_counties <- nashville_msa
@@ -652,47 +652,47 @@ age_df <-
 ################################################################################
 ### Load maps
 ################################################################################
-#source("TN_COVID_new/maps/new_active_percapita_last7.R")   #
-#source("TN_COVID_new/maps/new_cases_percapita_last7.R")    #
-#source("TN_COVID_new/maps/new_deaths_percapita.R")         #
-#source("TN_COVID_new/maps/total_active_percapita_last7.R") #
-#source("TN_COVID_new/maps/total_recovered_percapita.R")    #
-#source("TN_COVID_new/maps/total_cases.R")           # Total confirmed cases
-#source("TN_COVID_new/maps/total_deaths.R")          # Total deaths
-#source("TN_COVID_new/maps/new_deaths.R")            # New deaths
-#source("TN_COVID_new/maps/new_active.R")            # New active
-#source("TN_COVID_new/maps/total_active.R")          # Total active
-#source("TN_COVID_new/maps/total_recovered.R")       # Total recovered
-#source("TN_COVID_new/maps/new_recovered.R")         # New recovered
-#source("TN_COVID_new/maps/case_fatality_rate.R")    # Case Fatality Rate
-#source("TN_COVID_new/maps/total_cases_percapita.R") # Total confirmed cases
-source("TN_COVID_new/maps/total_deaths_percapita.R") # Total deaths per 100k
-source("TN_COVID_new/maps/total_active_percapita.R") # Total active per 100k
-source("TN_COVID_new/maps/new_cases.R")              # New confirmed cases
-source("TN_COVID_new/maps/new_deaths_last7.R")       # New deaths last 7 days
-source("TN_COVID_new/maps/new_recovered_last7.R")    # New recovered last 7 days
-source("TN_COVID_new/maps/new_active_last7.R")       # New active last 7 days
+#source("maps/new_active_percapita_last7.R")   #
+#source("maps/new_cases_percapita_last7.R")    #
+#source("maps/new_deaths_percapita.R")         #
+#source("maps/total_active_percapita_last7.R") #
+#source("maps/total_recovered_percapita.R")    #
+#source("maps/total_cases.R")           # Total confirmed cases
+#source("maps/total_deaths.R")          # Total deaths
+#source("maps/new_deaths.R")            # New deaths
+#source("maps/new_active.R")            # New active
+#source("maps/total_active.R")          # Total active
+#source("maps/total_recovered.R")       # Total recovered
+#source("maps/new_recovered.R")         # New recovered
+#source("maps/case_fatality_rate.R")    # Case Fatality Rate
+#source("maps/total_cases_percapita.R") # Total confirmed cases
+source("maps/total_deaths_percapita.R") # Total deaths per 100k
+source("maps/total_active_percapita.R") # Total active per 100k
+source("maps/new_cases.R")              # New confirmed cases
+source("maps/new_deaths_last7.R")       # New deaths last 7 days
+source("maps/new_recovered_last7.R")    # New recovered last 7 days
+source("maps/new_active_last7.R")       # New active last 7 days
 
 
 ################################################################################
 ### Load graphs
 ################################################################################
-#source("TN_COVID_new/graphs/total_cases.R")              # Tot. confirmed cases
-#source("TN_COVID_new/graphs/log_total_vs_new.R")         # Log(total vs New)
-#source("TN_COVID_new/graphs/total_hospitalized.R")       # Total hospitalized
-#source("TN_COVID_new/graphs/total_recovered.R")          # Total recovered
-#source("TN_COVID_new/graphs/total_deaths.R")             # Total deaths
-#source("TN_COVID_new/graphs/case_fatality_rate.R")       # Case Fatality Rate
-#source("TN_COVID_new/graphs/total_positive_test_rate.R") # Tot. Pos. Rate
-source("TN_COVID_new/graphs/new_recovered.R")             # New recovered
-source("TN_COVID_new/graphs/total_active.R")              # Total active
-source("TN_COVID_new/graphs/new_active.R")                # New active
-source("TN_COVID_new/graphs/new_deaths.R")                # New deaths
-source("TN_COVID_new/graphs/new_cases.R")                 # New confirmed cases
-source("TN_COVID_new/graphs/barchart_ages.R")             # Bar chart for age
-source("TN_COVID_new/graphs/new_hospitalized.R")          # New hospitalized
-source("TN_COVID_new/graphs/new_tests_perday.R")          # New tests per day
-source("TN_COVID_new/graphs/new_positive_test_rate.R")    # Positive test rate
+#source("graphs/total_cases.R")              # Tot. confirmed cases
+#source("graphs/log_total_vs_new.R")         # Log(total vs New)
+#source("graphs/total_hospitalized.R")       # Total hospitalized
+#source("graphs/total_recovered.R")          # Total recovered
+#source("graphs/total_deaths.R")             # Total deaths
+#source("graphs/case_fatality_rate.R")       # Case Fatality Rate
+#source("graphs/total_positive_test_rate.R") # Tot. Pos. Rate
+source("graphs/new_recovered.R")             # New recovered
+source("graphs/total_active.R")              # Total active
+source("graphs/new_active.R")                # New active
+source("graphs/new_deaths.R")                # New deaths
+source("graphs/new_cases.R")                 # New confirmed cases
+source("graphs/barchart_ages.R")             # Bar chart for age
+source("graphs/new_hospitalized.R")          # New hospitalized
+source("graphs/new_tests_perday.R")          # New tests per day
+source("graphs/new_positive_test_rate.R")    # Positive test rate
 
 
 ################################################################################

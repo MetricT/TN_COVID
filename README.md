@@ -18,7 +18,11 @@ R is also tragically single-threaded (you *can* use threads, but it's painful co
 
 # How do I run it?
 
-Start up RStudio, load TN_COVID.R, and hit the "source" button.  
+* Start up RStudio
+* Load TN_COVID.R
+* Set the local Github folder as the working folder (bottom-right pane, switch to the correct folder, click on "More", and select "Set as Working Directory"
+* Click on the "Source" button in the top left pane.  In a minute or so, you'll have a finished graphic.
+
 
 # What can you do to help?   Ideas...
 
