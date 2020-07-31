@@ -15,8 +15,8 @@
 ### https://www.tn.gov/health/cedep/ncov/data/downloadable-datasets.html
 ################################################################################
 
-### Set the Census API key
-#census_api_key("MY_CENSUS_API_KEY")
+### Set the Census API key.   Get your API key at https://api.census.gov/data/key_signup.html
+api_key_census = "PUT_YOUR_CENSUS_API_KEY_HERE"
 
 ### Let's start by cleaning the environment, it currently causes the graphs
 ### some problems if the environment is already populated
@@ -39,9 +39,6 @@ new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages, quiet = TRUE)
 invisible(lapply(packages, "library", quietly = TRUE,
                  character.only = TRUE, warn.conflicts = FALSE))
-
-### Load our standard header and config
-source("Include/API_Keys.R")
 
 ### Set the Census API key
 census_api_key(api_key_census)
