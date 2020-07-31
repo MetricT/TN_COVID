@@ -12,6 +12,8 @@ R scripts for graphing COVID-19 data as released by the TN Dept of Health
 
 The script has a bit of code at the top to install any necessary packages that aren't currently installed the first time you run it.
 
+In linux you may need to install the following packages from a terminal: `sudo apt install curl libxml2-dev libunits2-dev libudunits2-dev libgdal-dev`
+
 If you have the time and inclination (or are a masochist)...   The BLAS (a library used for matrix computations) included with R is tragically slow.   If you're compiling R from scratch, or can find pre-built DLL's for your platform, I highly recommend using GotoBLAS, OpenBLAS, ATLAS, or Intel MKL instead.   If you're running R a zillion times like I do, it will save you time.  If you don't know what those are, just ignore it.   Clear Linux is probably the fastest platform for running R, but getting it working is left as an excercise for the reader...
 
 R is also tragically single-threaded (you *can* use threads, but it's painful compared to other languages), so don't worry about trying to throw an expensive 16 core CPU at it for speedups.    Your bog-standard Haswell 4-core is sufficient. 
@@ -23,6 +25,8 @@ R is also tragically single-threaded (you *can* use threads, but it's painful co
 * Set the local Github folder as the working folder (bottom-right pane, switch to the correct folder, click on "More", and select "Set as Working Directory"
 * Click on the "Source" button in the top left pane.  In a minute or so, you'll have a finished graphic.
 
+
+You may need to first go to Session -> Set Working Directory -> To Source File Location
 
 # What can you do to help?   Ideas...
 
