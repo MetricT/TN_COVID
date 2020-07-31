@@ -166,7 +166,7 @@ g_cases_and_deaths_facet <-
   geom_point(cases_deaths_tib, 
              mapping = aes(y = value), size = 1, shape = 19, alpha = 0.2) +
   
-  geom_line(cases_deaths_tib, 
+  geom_line(cases_deaths_tib, color = "firebrick3",
             mapping = aes(y = trend), size = 1.3) +
   
   geom_hline(data = subset(cases_deaths_tib, cases_deaths == "cases"), 
@@ -174,7 +174,7 @@ g_cases_and_deaths_facet <-
   
   geom_text(data = subset(cases_deaths_tib, cases_deaths == "cases"), 
             aes(x = as.Date("2020-06-15"), y = 39),
-            size = 4,
+            size = 4, color = "#333333",
             label = "Median Age of TN = 38.7 yrs") +
 
   facet_wrap(~ cases_deaths, scales = "free_y") +

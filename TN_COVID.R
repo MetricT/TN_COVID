@@ -17,7 +17,7 @@
 
 ### Set the Census API key.   Get your API key at https://api.census.gov/data/key_signup.html
 api_key_census <- "PUT_YOUR_CENSUS_API_KEY_HERE"
-api_key_census <- "b1238ec79c5b2b6c81e13d7dda124758e945b82c"
+
 ### Let's start by cleaning the environment, it currently causes the graphs
 ### some problems if the environment is already populated
 ###
