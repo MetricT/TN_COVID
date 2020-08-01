@@ -8,7 +8,7 @@ county <- c("Cheatham")
 
 total_active <-
   total_active_tib %>%
-  select("Date", county) %>%
+  select("Date", all_of(county)) %>%
   rename(County = county) %>%
   mutate(County_per = 100 * County / (tn_pop_df %>%
                                         filter(County == county) %>%
@@ -78,4 +78,4 @@ graph_total_active_county_percapita <-
   scale_x_date(date_labels = "%m/%d") +
   scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
   labs(title = totact_title, x = "", y = "")
-#print(graph_total_active_county_percapita)
+print(graph_total_active_county_percapita)

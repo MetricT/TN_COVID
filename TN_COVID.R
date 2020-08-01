@@ -16,7 +16,7 @@
 ################################################################################
 
 ### Set the Census API key.   Get your API key at https://api.census.gov/data/key_signup.html
-api_key_census <- "PUT_YOUR_CENSUS_API_KEY_HERE"
+# api_key_census <- "PUT_YOUR_CENSUS_API_KEY_HERE"
 
 ### Let's start by cleaning the environment, it currently causes the graphs
 ### some problems if the environment is already populated
@@ -34,7 +34,7 @@ rm(list = ls()[!ls() %in% keepme])
 packages <- c("tidyverse", "dplyr", "readxl", "ggplot2", "sf", "rgeos", "TTR",
               "scales", "cowplot", "viridis", "gridExtra", "tidycensus", "zoo",
               "RColorBrewer", "reshape2", "tidyselect", "feasts", "fable", 
-              "lubridate", "tsibble")
+              "lubridate", "tsibble", "keyring")
 
 new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages, quiet = TRUE)

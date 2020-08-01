@@ -54,3 +54,28 @@ graph_age_deaths <- ggplot(data = age_data, aes(x = deaths_statewide, y = age)) 
   labs(title = paste("TN Deaths by Age: ", num_dea, sep = ""), x = "", y = "")
 #print(graph_age_deaths)
 
+### Death rate by age
+
+death_rate_data <-
+  age_df %>% 
+  filter(DATE == as.Date("2020-07-31")) %>% 
+  filter(AGE != "Pending") %>%
+  mutate(AGE = gsub(" years", "", AGE)) %>%
+  rename(age = AGE) %>%
+  select(-NEW_CASES, -NEW_DEATHS) %>% 
+  mutate(death_rate_by_age = round(TOTAL_DEATHS / TOTAL_CASES, 4))
+
+graph_age_deathrate <- 
+  ggplot(data = death_rate_data, aes(x = death_rate_by_age, y = age)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45)) +
+  theme(axis.text.x = element_text(vjust = 0.7)) +
+  theme(axis.text.x = element_text(hjust = 0.8)) +
+  geom_age_orientation +
+  geom_bar(stat = "identity", fill = graph_color) +
+  geom_text(nudge_x = 0.05 * max(death_rate_data$death_rate_by_age),
+            label = paste(100 * death_rate_data$death_rate_by_age, "%", sep = "")) +
+  scale_x_continuous(labels = scales::percent) +
+  labs(title = "Death Rate as a % of Confirmed Cases", x = "", y = "")
+#print(graph_age_deathrate)
+
