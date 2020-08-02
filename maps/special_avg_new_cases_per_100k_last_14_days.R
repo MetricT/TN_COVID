@@ -29,11 +29,7 @@ this_map <-
     color_code = case_when(
       new_cases_percapita_last14 <= 10 ~ "Below Threshold <= 10",
       new_cases_percapita_last14 >  10 ~ "Above Threshold >  10",
-      #new_cases_percapita_last14 <= 10 ~ "#3e87b5",
-      #new_cases_percapita_last14 >  10 ~ "#ce703a",
     ))
-
-
 
 new_cases_percapita_last14_label <- 
   (this_map$new_cases_percapita_last14) %>% round(1)
@@ -66,6 +62,6 @@ map_new_cases_percapita_last14 <-
   scale_fill_manual(values =  c("Below Threshold <= 10" = "#3e87b5",
                                 "Above Threshold >  10" = "#ce703a")) +
   
-  labs(title = paste("Average New Cases Per ", scale_txt, " Last 14 Days - ", Sys.Date(), sep = "")) 
+  labs(title = paste("Average New Cases Per ", scale_txt, " Last 14 Days - ", 
+                     new_cases_tib %>% tail(n = 1) %>% pull("Date"), sep = "")) 
 print(map_new_cases_percapita_last14)
-  

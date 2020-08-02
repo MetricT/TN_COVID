@@ -72,7 +72,8 @@ if (!exists("data_loaded")) {
   county_new_url         <- paste(url_root, "County-New.XLSX", sep = "")
   race_ethnicity_sex_url <- paste(url_root, "RaceEthSex.XLSX", sep = "")
   county_school_url      <- paste(url_root, "Daily-County-School.XLSX", sep = "")
-
+  mmwr_url               <- paste(url_root, "MMWR-Week-Case-Count.XLSX", sep = "")
+  
   ### Read 'em in...
   age_ss_df <-
     read_excel_url(age_ss_url) %>%
@@ -111,7 +112,12 @@ if (!exists("data_loaded")) {
   county_school_df <-
     read_excel_url(county_school_url) %>%
     mutate(DATE = as.Date(DATE))
+  
+  mmwr_df <-
+    read_excel_url(mmwr_url) %>%
+    mutate(DATE = as.Date(DATE))
 }
+
 
 
 ################################################################################
@@ -218,6 +224,8 @@ map_counties_fips <-
 
 ### Use TidyCensus to pull population data as well as map geometry
 ### from the Census bureau
+### Note: Spews red "errors" because I'm feeding it county names instead of 
+### FIPS codes.   Fix later.
 county_acs <-
   get_acs(geography   = "county",
           variables   = c("B01003_001"),
@@ -241,40 +249,6 @@ tn_pop_df <-
   select(GEOID, NAME, POP2018) %>%
   rename(County = NAME) %>%
   mutate(County = if_else(County == "DeKalb", "Dekalb", County))
-
-### Massage the state/county map data a bit
-state_mapdata <- tn_pop_df
-
-### Make a copy of the state geometry
-counties <- state_mapdata
-
-### Find the center of each county so we can add the number of cases
-county_centers <-
-  tn_map_df$geometry %>%
-  as_Spatial() %>%
-  gCentroid(byid = TRUE)
-
-### The centroid function is very good, but occasionally can give less-than-
-### perfect results, often due to counties with extreme concave shape.   We
-### can use "nudges" to adjust the location of the number to make it look good.
-
-# Default nudge is 0
-counties$nudge_y <- 0
-counties$nudge_x <- 0
-
-counties$nudge_y[counties$County == "Chester"]   <-  0.035
-counties$nudge_y[counties$County == "Houston"]   <-  0.015
-counties$nudge_y[counties$County == "Putnam"]    <-  0.025
-counties$nudge_y[counties$County == "Loudon"]    <-  0.015
-counties$nudge_y[counties$County == "Anderson"]  <- -0.015
-counties$nudge_x[counties$County == "Pickett"]   <- -0.065
-counties$nudge_x[counties$County == "Unicoi"]    <- -0.070
-counties$nudge_y[counties$County == "Unicoi"]    <- -0.035
-counties$nudge_x[counties$County == "Hancock"]   <- -0.035
-counties$nudge_x[counties$County == "Trousdale"] <- -0.020
-counties$nudge_x[counties$County == "Lake"]      <-  0.030
-counties$nudge_x[counties$County == "Moore"]     <-  0.005
-counties$nudge_y[counties$County == "Moore"]     <-  0.015
 
 ################################################################################
 ### Take our imported data from the spreadsheets, and split it into some useful
@@ -567,7 +541,6 @@ new_active_by_county <-
 ###################################################
 # Combine the data above and add to the map
 ###################################################
-
 stats_df <-
   total_cases_by_county %>%
   left_join(new_cases_by_county,       by = "County") %>%
@@ -577,11 +550,6 @@ stats_df <-
   left_join(new_active_by_county,      by = "County") %>%
   left_join(total_recovered_by_county, by = "County") %>%
   left_join(new_recovered_by_county,   by = "County")
-
-counties <-
-  counties %>%
-  left_join(tn_map_df, by = "GEOID") %>%
-  left_join(stats_df,  by = "County")
 
 
 ################################################################################
@@ -648,6 +616,51 @@ age_df <-
          NEW_CASES = NEW_ARCASES,
          TOTAL_DEATHS = AR_TOTALDEATHS,
          NEW_DEATHS = AR_NEWDEATHS)
+
+################################################################################
+### The code below takes my script and renders the infographic.   It should be 
+### possible to split off the top part and use it as a "data loader" for other
+### scripts
+################################################################################
+
+### Make a working copy of the state geometry
+counties <- tn_pop_df
+
+counties <-
+  counties %>%
+  left_join(tn_map_df, by = "GEOID") %>%
+  left_join(stats_df,  by = "County")
+
+### Find the center of each county so we can add the number of cases
+county_centers <-
+  tn_map_df$geometry %>%
+  as_Spatial() %>%
+  gCentroid(byid = TRUE)
+
+### The centroid function is very good, but occasionally can give less-than-
+### perfect results, often due to counties with extreme concave shape.   We
+### can use "nudges" to adjust the location of the number to make it look good.
+
+# Default nudge is 0
+counties$nudge_y <- 0
+counties$nudge_x <- 0
+
+counties$nudge_y[counties$County == "Chester"]   <-  0.035
+counties$nudge_y[counties$County == "Houston"]   <-  0.015
+counties$nudge_y[counties$County == "Putnam"]    <-  0.025
+counties$nudge_y[counties$County == "Loudon"]    <-  0.015
+counties$nudge_y[counties$County == "Anderson"]  <- -0.015
+counties$nudge_x[counties$County == "Pickett"]   <- -0.065
+counties$nudge_x[counties$County == "Unicoi"]    <- -0.070
+counties$nudge_y[counties$County == "Unicoi"]    <- -0.035
+counties$nudge_x[counties$County == "Hancock"]   <- -0.035
+counties$nudge_x[counties$County == "Trousdale"] <- -0.020
+counties$nudge_x[counties$County == "Lake"]      <-  0.030
+counties$nudge_x[counties$County == "Moore"]     <-  0.005
+counties$nudge_y[counties$County == "Moore"]     <-  0.015
+
+
+
 
 ################################################################################
 ### Load maps
