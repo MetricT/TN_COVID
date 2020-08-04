@@ -4,7 +4,9 @@
 scale     <- 1000
 scale_txt <- "1k"
 
-counties <- counties %>% select(-starts_with("new_active_percapita_last7"))
+counties <- 
+  counties %>% 
+  select(-starts_with("new_active_percapita_last7"))
 
 new_active_percapita_last7 <-
   new_active_tib %>%
@@ -51,10 +53,11 @@ map_new_active_percapita_last7 <-
                 label = new_active_percapita_last7_label),
             nudge_x = this_map$nudge_x,
             nudge_y = this_map$nudge_y) +
-  labs(title = paste("New Active Per ", scale_txt, " Last 7 Days, [ 2020-07-29 ]", sep = "")) +
+  labs(title = paste("New Active Per ", scale_txt, " Last 7 Days, [ ",
+                     new_active_tib %>% tail(n = 1) %>% pull("Date"), " ]", sep = "")) +
   scale_fill_gradient2(midpoint = 0,
                        trans = "pseudo_log",
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-#print(map_new_active_percapita_last7)
+print(map_new_active_percapita_last7)

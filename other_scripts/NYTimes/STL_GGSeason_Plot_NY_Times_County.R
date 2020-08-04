@@ -23,7 +23,7 @@ lag <- 6
 ###
 ### https://github.com/nytimes/covid-19-data
 ###
-spreadsheet <- "../nytimes_covid-19-data/us-counties.csv"
+spreadsheet <- "../Datasets/nytimes/covid-19-data/us-counties.csv"
 
 
 ### Take the data in the spreadsheet, which is total new cases, and convert
@@ -93,10 +93,11 @@ footer <- ggdraw() + draw_label(footer_string, size = 10)
 
 ### Let's smoosh it all together in one graph
 p_period <- plot_grid(g_week, g_month, nrow = 1, ncol = 2, align = "hv", axis = "lbrt")
-plot_grid(title,
+p_final <- 
+  plot_grid(title,
           g_stl,
           p_period,
           footer,
           axis = "lbrt", nrow = 4, ncol = 1, rel_heights = c(0.1, 1, 0.5, 0.05),
           align = "hv")
-
+print(p_final)

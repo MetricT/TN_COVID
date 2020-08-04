@@ -18,7 +18,7 @@ lag_st <- 10
 # Download this Github repo and add the path to the spreadsheet
 # https://github.com/nytimes/covid-19-data
 data <-
-  read_csv("../Datasets/nytimes_covid-19-data/us-counties.csv", col_names = TRUE, col_types = "Dccddd") %>%
+  read_csv("../Datasets/nytimes/covid-19-data/us-counties.csv", col_names = TRUE, col_types = "Dccddd") %>%
   filter(state == my_state) %>%
   filter(county == my_county) %>%
   select(-state, -county, -fips) %>%

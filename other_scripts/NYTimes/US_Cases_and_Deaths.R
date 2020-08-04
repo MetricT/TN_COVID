@@ -11,7 +11,7 @@ lag_us <- 7
 # Download this Github repo and add the path to the spreadsheet
 # https://github.com/nytimes/covid-19-data
 spreadsheet <-
-  read_csv("../Datasets/nytimes_covid-19-data/us.csv", col_names = TRUE, col_types = "Ddd")
+  read_csv("../Datasets/nytimes/covid-19-data/us.csv", col_names = TRUE, col_types = "Ddd")
   
 
 data <-

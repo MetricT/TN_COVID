@@ -155,7 +155,7 @@ print(g_facet_race)
 ################################################################################
 
 mmwr_data <- 
-  mortality_df %>% 
+  mmwr_df %>% 
   select(DATE, COUNTY_CASE_COUNT) %>% 
   group_by(DATE) %>% 
   summarize(CASES = sum(COUNTY_CASE_COUNT)) %>%
@@ -168,7 +168,7 @@ mmwr_model <-
   model(STL(CASES ~ trend() + season(period = "week") + season(period = "month"))) %>%
   components() 
   
-  ### Create a new tibble using the decomposed components
+### Create a new tibble using the decomposed components
 mmwr_tib <-
   tibble(date      = mmwr_data  %>% pull("DATE"),
          values    = mmwr_data  %>% pull("CASES"),

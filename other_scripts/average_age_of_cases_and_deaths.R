@@ -169,10 +169,10 @@ g_cases_and_deaths_facet <-
   geom_line(cases_deaths_tib, color = "firebrick3",
             mapping = aes(y = trend), size = 1.3) +
   
-  geom_hline(data = subset(cases_deaths_tib, cases_deaths == "cases"), 
+  geom_hline(data = subset(cases_deaths_tib, cases_deaths == "cases") %>% tail(n = 1), 
              aes(yintercept = 38.7), linetype = "dotted") + 
   
-  geom_text(data = subset(cases_deaths_tib, cases_deaths == "cases"), 
+  geom_text(data = subset(cases_deaths_tib, cases_deaths == "cases") %>% tail(n = 1), 
             aes(x = as.Date("2020-06-15"), y = 39),
             size = 4, color = "#333333",
             label = "Median Age of TN = 38.7 yrs") +

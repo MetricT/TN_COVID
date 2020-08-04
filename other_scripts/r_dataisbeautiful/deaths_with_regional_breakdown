@@ -24,8 +24,16 @@ if (!exists("data_loaded")) {
   spreadsheet <- 
     "../Datasets/nytimes/covid-19-data/us-states.csv" %>%
     read_csv(col_names = TRUE, col_types = "Dccdd") %>%
-    filter(!state %in% remove_states)
-  data_loaded <- 1
+    filter(!state %in% remove_states) %>%
+
+    ### A special one for New Jersey...
+    mutate(deaths = if_else(state == "New Jersey" & date >= as.Date("2020-06-25"), deaths - 1877, deaths)) %>%
+  
+    ### And two for New York...
+    mutate(deaths = if_else(state == "New York" & date >= as.Date("2020-05-06"), deaths - 694, deaths)) %>%
+    mutate(deaths = if_else(state == "New York" & date >= as.Date("2020-06-30"), deaths - 610, deaths))
+  
+    data_loaded <- 1
 }
 
 ### Pluck the date out to include in our graph
@@ -36,11 +44,18 @@ current_date <- spreadsheet %>% arrange(date) %>% tail(n = 1) %>% pull("date")
 
 region_df <-
   tribble(
-    ~region,    ~color,    ~name,
-    "region_1", "#ffffcc", "Northeast",
-    "region_2", "#a1dab4", "Midwest",
-    "region_3", "#225ea8", "South",
-    "region_4", "#41b6c4", "West",
+    ~region,    ~name,
+    "region_1", "Northeast",
+    "region_2", "Midwest",
+    "region_3", "South",
+    "region_4", "West",
+  )
+region_df <-
+  region_df %>%
+  bind_cols(
+    colorRampPalette(c("#ffffcc", "#41b6c4"))(nrow(region_df)) %>% 
+      as_tibble() %>% 
+      rename(color = value)
   )
 
 region_1 <- c("Pennsylvania", "New York", "New Jersey", "Vermont", "New Hampshire", "Maine", "Massachusetts", "Connecticut", "Rhode Island")
@@ -69,7 +84,7 @@ data <-
   filter(deaths != 0) %>%
   
   ### A special one for New Jersey...
-  mutate(deaths = if_else(state == "New Jersey" & date >= as.Date("2020-06-25"), deaths - 1877, deaths)) %>%
+  #mutate(deaths = if_else(state == "New Jersey" & date >= as.Date("2020-06-25"), deaths - 1877, deaths)) %>%
   
   arrange(date) %>% 
   left_join(state_df, by = "state") %>%
@@ -99,7 +114,11 @@ data <-
 ################################################################################
 ### Draw the inset "Regional Curves" graph
 ################################################################################
-g_regional_curves <-
+data$region_sep <- 
+  factor(data$region_sep,
+         levels = c("region_3", "region_4", "region_2", "region_1"))
+
+g_regional_curves_deaths <-
   ggplot(data = data, aes(x = as.Date(date), y = values)) +
   theme_bw() +
   theme(legend.position = "none") +
@@ -117,7 +136,7 @@ g_regional_curves <-
                                "region_4" = "#41b6c4")) +
     
   facet_wrap(~ name, nrow = 4, ncol = 1, strip.position = "right")
-#print(g_regional_curves)
+#print(g_regional_curves_deaths)
 
 ################################################################################
 ### Draw the inset USA map 
@@ -132,11 +151,11 @@ state_map <-
   left_join(state_df, by = c("state_name" = "state")) %>%
   left_join(region_df, by = c("region" = "region"))
 
-g_map_usa_regions <-
+g_map_usa_regions_deaths <-
   ggplot(data = state_map) +
   theme_void() + 
   geom_sf(fill = state_map$color, color="black", size = 0.4, alpha = 0.8)
-#print(g_map_usa_regions)
+#print(g_map_usa_regions_deaths)
 
 ################################################################################
 ### Draw the main graph (stacked line graph of deaths)
@@ -149,9 +168,33 @@ caption <-
 
 total_deaths <- spreadsheet %>% filter(date == (spreadsheet %>% tail(n = 1) %>% pull("date"))) %>% pull("deaths") %>% sum()
 
-growing_at <- spreadsheet %>% select(date, deaths) %>% group_by(date) %>% summarize(deaths = sum(deaths)) %>% tail(n = 2) %>% pull(deaths) %>% diff()
+#growing_at <- spreadsheet %>% select(date, deaths) %>% group_by(date) %>% summarize(deaths = sum(deaths)) %>% tail(n = 2) %>% pull(deaths) %>% diff()
 
-up_rate <- spreadsheet %>% select(date, deaths) %>% group_by(date) %>% summarize(deaths = sum(deaths)) %>% tail(n = 20) %>% mutate(new_deaths = c(0, diff(deaths))) %>% tail(n = 8) %>% arrange(date) %>% filter(row_number() %in% c(1, n())) %>% pull(new_deaths)
+growing_at <- 
+  spreadsheet %>% 
+  select(date, deaths) %>% 
+  group_by(date) %>% 
+  summarize(deaths = sum(deaths)) %>% 
+  tail(n = 10) %>% 
+  mutate(new_deaths = c(0, diff(deaths))) %>% 
+  tail(n = 7) %>% 
+  pull(new_deaths) %>% 
+  mean() %>% 
+  round() %>%
+  format(big.mark = ",", scientific = FALSE)
+
+up_rate <- 
+  spreadsheet %>% 
+  select(date, deaths) %>% 
+  group_by(date) %>% 
+  summarize(deaths = sum(deaths)) %>% 
+  mutate(new_deaths = c(0, diff(deaths))) %>% 
+  mutate(new_deaths_sma = SMA(new_deaths, n = 7)) %>%
+  tail(n = 7) %>% 
+  arrange(date) %>% 
+  filter(row_number() %in% c(1, n())) %>% 
+  pull(new_deaths_sma)
+
 up_rate <- round(100 * (up_rate[2] - up_rate[1]) / up_rate[1], 2)
 
 
@@ -160,13 +203,9 @@ subtitle <-
         " Total Deaths (",
         round(10000 * total_deaths / 327533795, 1),
         " per 10,000 people)\n",
-        "Growing at ", growing_at %>% format(big.mark = ",", scientific = FALSE), " new deaths/day\n",
+        "Growing at ", growing_at, " new deaths/day\n",
         "Up ", up_rate, "% from 7 days ago",
         sep = "")
-
-data$region_sep <- 
-  factor(data$region_sep,
-         levels = c("region_3", "region_4", "region_2", "region_1"))
 
 g_deaths_stacked <-
   ggplot(data = data, aes(x = as.Date(date), y = values, fill = region_sep)) + 
@@ -215,20 +254,23 @@ g_deaths_stacked_per <-
 ################################################################################
 ### Put it all together
 ################################################################################
-g_deaths_stacked + 
+g_final_deaths <-
+  g_deaths_stacked + 
   annotation_custom(ggplotGrob(g_deaths_stacked_per), 
                                xmin = as.Date(data %>% tail(n = 1) %>% pull("date")) - 60, 
                                xmax = as.Date(data %>% tail(n = 1) %>% pull("date")), 
                                ymin = 1300,
                                ymax = 2300) +
-  annotation_custom(ggplotGrob(g_map_usa_regions), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")),
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 37, 
+  annotation_custom(ggplotGrob(g_map_usa_regions_deaths), 
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 5,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 5 + 45, 
                     ymin = 1300,
                     ymax = 2300) + 
 
-  annotation_custom(ggplotGrob(g_regional_curves), 
+  annotation_custom(ggplotGrob(g_regional_curves_deaths), 
                   xmin = as.Date(data %>% head(n = 1) %>% pull("date")),
                   xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 23, 
                   ymin = 250,
                   ymax = 1250)
+print(g_final_deaths)
+

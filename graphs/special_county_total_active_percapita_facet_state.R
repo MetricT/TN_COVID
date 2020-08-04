@@ -46,7 +46,7 @@ graph_total_active_county_percapita <-
 
   geom_line(color = "darkseagreen4", size = line_thickness) +
 
-  facet_geo(~ County, grid = "us_tn_counties_grid1") +
+  facet_geo(~ County, grid = "us_tn_counties_grid1", scale = "free_y") +
 
   scale_x_date(date_labels = "%m/%d") +
   scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
