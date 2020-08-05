@@ -213,6 +213,7 @@ g_deaths_stacked <-
   theme(legend.title = element_blank()) +
   theme(legend.position = "none") +
   geom_area(color="black", size = 0.4, alpha = 0.8) +
+  geom_vline(xintercept = as.Date("2020-07-25"), linetype = "dashed") +
   scale_fill_manual(values = c("region_1" = "#ffffcc",
                                "region_2" = "#a1dab4",
                                "region_3" = "#225ea8",
