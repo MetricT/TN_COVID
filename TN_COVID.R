@@ -166,7 +166,7 @@ location <- "Tennessee"
 ### Or if you would like to do some other subset, uncomment the "source"
 ### below and then add the lines for your desired subset
 
-source("geography.R")
+#source("geography.R")
 
 #graph_counties <- nashville_msa
 #map_counties <- nashville_msa
