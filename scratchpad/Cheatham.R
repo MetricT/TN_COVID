@@ -3,11 +3,8 @@
 ################################################################################
 
 library(tidyverse)
-library(geofacet)
 
-counties <- c("Montgomery", "Robertson",  "Sumner",
-              "Cheatham",   "Davidson",   "Wilson",
-              "Dickson",    "Williamson", "Rutherford")
+counties <- c("Cheatham")
 
 graph_color <- "steelblue2"
 
@@ -33,18 +30,6 @@ combined <-
 #  full_join(forecast_1_per, by = c("Date" = "date"))
 
 
-my_grid <- data.frame(
-  row = c( 1, 1, 1,
-           2, 2, 2,
-           3, 3, 3),
-  col = c( 1, 2, 3,
-           1, 2, 3,
-           1, 2, 3),
-  code = counties,
-  name = counties,
-  stringsAsFactors = FALSE
-)
-
 graph_total_active_county_percapita <-
   ggplot(data = combined, aes(x = as.Date(Date), y = active_rate / 100)) +
   theme_bw() +
@@ -56,7 +41,7 @@ graph_total_active_county_percapita <-
 
   geom_line(color = graph_color, size = line_thickness) +
 
-  facet_geo(~ County, grid = my_grid) +
+  #facet_geo(~ County, grid = my_grid) +
 
     scale_x_date(date_labels = "%m/%d") +
   scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
