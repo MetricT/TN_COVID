@@ -30,14 +30,17 @@ if (use_spreadsheet == 1) {
 
 } else {
 
-  wh_df_date <- new_cases_tib %>% tail(n = 1) %>% pull("Date")
+
   
-  
-  ### Use this filter data after this date, so I can try to figure out what date
-  ### the White House is using to get their results.
+  ### Use this to filter data after this date, so I can try to figure out what 
+  ### date the White House is using to get their results.
   
   last_date <- as.Date("2020-07-26")
 #  last_date <- as.Date(Sys.Date()) + 1  # Effectively disable it 
+  
+  wh_df_date <- last_date
+  
+  #wh_df_date <- new_cases_tib %>% tail(n = 1) %>% pull("Date")
   
   # From https://www.newschannel5.com/news/newschannel-5-investigates/white-house-task-force-warns-about-covid-19-spread-in-75-tennessee-counties
   #
@@ -50,17 +53,23 @@ if (use_spreadsheet == 1) {
   # one of those two conditions and one condition qualifying as being in the 
   # 'Red Zone.'"
 
-  new_cases_percapita_last7 <-
-    new_cases_tib %>%
+
+  ### Pluck out info about new cases over the last 7 days   Doing it this way
+  ### instead of using the new_cases_tib directly because some of the new_cases
+  ### have negative results, and this method eliminates them.
+  new_cases_last7 <-
+    total_cases_tib %>%
     filter(Date >= as.Date("2020-04-01")) %>% 
     filter(Date <= last_date) %>%
     tail(n = 7) %>%
-    select(-Date, -Total) %>%
-    gather() %>%
-    group_by(key) %>%
-    summarize(new_cases_last7 = sum(value)) %>%
-    rename(County = key) 
-
+    filter(row_number()==1 | row_number()==n()) %>%
+    mutate(across(!starts_with("DATE"), ~ . - lag(.))) %>%
+    tail(n = 1) %>%
+    pivot_longer(-Date, names_to = "County", values_to = "new_cases_last7") %>%
+    select(County, new_cases_last7) %>%
+    filter(!County %in% c("Out of State", "Pending", "Total"))
+  
+  ### Pluck out info about new positivity results over the last week.
   positivity_results <- 
     county_new_df %>% 
     select(DATE, COUNTY, NEW_POS_TESTS, NEW_NEG_TESTS) %>% 
@@ -69,16 +78,21 @@ if (use_spreadsheet == 1) {
            NEG_TESTS = NEW_NEG_TESTS) %>%
     filter(DATE >= as.Date("2020-04-01")) %>% 
     filter(DATE <= last_date) %>%
-      mutate(positivity_rate = if_else(NEG_TESTS == 0, 0, POS_TESTS / (POS_TESTS + NEG_TESTS))) %>%
-    select(DATE, COUNTY, positivity_rate) %>%
-    pivot_wider(id_cols = "DATE", names_from = "COUNTY", values_from = "positivity_rate") %>%
+    select(DATE, COUNTY, POS_TESTS, NEG_TESTS) %>%
+    pivot_wider(id_cols = "DATE", 
+                names_from = "COUNTY", 
+                names_sep = ":", 
+                values_from = c("POS_TESTS", "NEG_TESTS")) %>%
     tail(n = 7) %>%
-    pivot_longer(-DATE, names_to = "county", values_to = "value") %>%
-    select(county, value) %>%
-    group_by(county) %>%
-    summarize(positivity = mean(value)) %>%
-    ungroup()
-
+    filter(row_number()==1 | row_number()==n()) %>%
+    mutate(across(!starts_with("DATE"), ~ . - lag(.))) %>%
+    tail(n = 1) %>%
+    pivot_longer(-DATE, names_to = c("type", "county"), names_sep = ":", values_to = "value") %>%
+    pivot_wider(id_cols = c("DATE", "county"), names_from = "type", values_from = "value") %>%
+    mutate(positivity = POS_TESTS / (POS_TESTS + NEG_TESTS)) %>%
+    select(county, positivity)
+  
+  ### Get the population so we can compute per capita data
   pop_2018 <-
     county_acs %>% 
     st_drop_geometry() %>% 
@@ -88,15 +102,14 @@ if (use_spreadsheet == 1) {
     mutate(county = gsub(" County, Tennessee", "", county)) %>%
     mutate(county = if_else(county == "DeKalb", "Dekalb", county))
 
+  ### Combine them all together
   combined <- 
-    new_cases_percapita_last7 %>%
+    new_cases_last7 %>%
     left_join(positivity_results, by = c("County" = "county")) %>%
     left_join(pop_2018, by = c("County" = "county")) %>%
     filter(!County %in% c("Out of State", "Pending")) %>%
-    mutate(case_pop = 100000 * new_cases_last7 / POP2018) %>%
+    mutate(new_cases_percapita = 100000 * new_cases_last7 / POP2018) %>%
     mutate(positivity = positivity * 100) %>%
-    mutate(case_pop = round(case_pop),
-           positivity = round(positivity)) %>%
 
     # Red zones are jurisdictions that, during the previous week, "reported both new
     # cases above 100 per 100,000 per population and a diagnostic test positivity
@@ -108,15 +121,21 @@ if (use_spreadsheet == 1) {
     # 'Red Zone.'"
     
     mutate(level_pop = case_when(
-      case_pop >= 100 ~ "RED",
-      case_pop >= 10  ~ "YELLOW",
-      case_pop <  10  ~ "WHITE",
+      new_cases_percapita <  10    ~ "WHITE",
+      
+      new_cases_percapita >= 10 &
+        new_cases_percapita < 100  ~ "YELLOW",
+      
+      new_cases_percapita >= 100   ~ "RED",
     )) %>%
 
     mutate(level_pos = case_when(
-      positivity >= 10 ~ "RED",
-      positivity >= 5  ~ "YELLOW",
-      positivity <  5  ~ "WHITE"
+      positivity <  5    ~ "WHITE",
+      
+      positivity >= 5  &
+        positivity < 10  ~ "YELLOW",
+      
+      positivity >= 10   ~ "RED",
     )) %>%
 
     mutate(level = case_when(
