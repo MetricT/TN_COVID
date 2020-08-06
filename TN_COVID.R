@@ -169,7 +169,7 @@ location <- "Tennessee"
 ### Or if you would like to do some other subset, uncomment the "source"
 ### below and then add the lines for your desired subset
 
-#source("geography.R")
+source("geography.R")
 
 #graph_counties <- nashville_msa
 #map_counties <- nashville_msa
@@ -180,7 +180,7 @@ location <- "Tennessee"
 #location <- "Davidson County"
 
 #graph_counties <- c("Cheatham")
-#map_counties <- all_counties
+#map_counties <- c(nashville_msa, cheatham_superset)
 #location <- "Cheatham County"
 
 

@@ -55,4 +55,4 @@ map_new_cases_percapita_last14 <-
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-#print(map_new_cases_percapita_last14)
+print(map_new_cases_percapita_last14)

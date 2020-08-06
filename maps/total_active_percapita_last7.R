@@ -51,4 +51,4 @@ map_total_active_percapita_last7 <-
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
-#print(map_total_active_percapita_last7)
+print(map_total_active_percapita_last7)

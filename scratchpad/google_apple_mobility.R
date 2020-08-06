@@ -35,45 +35,42 @@ google_mobility <-
 ### state or county.
 ################################################################################
 my_state  <- c("Tennessee")
-my_county <- c("Cheatham County", "Davidson County", "Williamson County")
+my_county <- c("Cheatham County", "Davidson County", "Williamson County", "Dickson County")
 
-### Pull data for the locations listed
-apple_county <-
+### Doing it this way so you can specify counties in multiple states and compare
+my_locations <- paste(my_county, ", ", my_state, sep = "")
+
+################################################################################
+### Take Apple data and draw a facet graph of locations showing change in activity
+################################################################################
+
+### Pull out the data and use mstl() to pluck out a trend line
+apple_model <-
   apple_mobility %>% 
   filter(geo_type == "county") %>%
   rename(county = county_and_city) %>%
-  filter(state %in% my_state) %>%
-  filter(county %in% my_county) %>%
-  select(-geo_type, -transit, -walking) %>%
+  mutate(location = paste(county, ", ", state, sep = "")) %>%
+  filter(location %in% my_locations) %>%
+  select(date, location, driving) %>%
   rename(values = driving, dates = date) %>%
-  mutate(location = paste("values:", county, ", ", state, sep = "")) %>%
+  mutate(location = paste("values:", location, sep = "")) %>%
   select(dates, location, values) %>%
   pivot_wider(id_cols = "dates", names_from = "location", values_from = "values") %>%
-  janitor::clean_names() %>%
-  arrange(dates)
-
-
-### Use mstl() to pluck out a trend line
-apple_model <-
-  apple_county %>%
+  arrange(dates) %>%
   as_tsibble() %>% 
   tsibble::fill_gaps() %>% 
   na.locf() %>% 
-  mutate(across(starts_with("values_"),
+  mutate(across(starts_with("values:"),
                 .fns = list(trend = ~ (.) %>% ts() %>% mstl() %>% trendcycle()),
                 .names = "{fn}_{col}")) %>%
-  rename_at(vars(starts_with("trend_values_")),
-          ~ str_replace(., "trend_values_", "trend:")) %>%
-  rename_at(vars(starts_with("values_")),
-            ~ str_replace(., "values_", "values:")) %>%
+  rename_at(vars(starts_with("trend_values")),
+          ~ str_replace(., "trend_values", "trend")) %>%
   as_tibble() %>%
   pivot_longer(-dates, names_to = c("type", "location"), names_sep = ":", values_to = "values") %>%
   pivot_wider(id_cols = c("dates", "location"), names_from = "type", values_from = "values")
 
 
 ### Create a facet map showing the data along with the trend for each location
-  
-
 g_apple <-
   ggplot(data = apple_model, aes(x = as.Date(dates))) +
   theme_linedraw() +
@@ -88,42 +85,43 @@ g_apple <-
        y = "Change in requests since January 13, 2020")
 print(g_apple)
 
+################################################################################
+### Take Google data and draw a facet graph of locations showing change in activity
+################################################################################
 google_tn <-
   google_mobility %>% 
-  janitor::clean_names() %>%
-  filter(state == "Tennessee") %>%
-  filter(county == "Cheatham County") %>%
+  mutate(location = paste(county, ", ", state, sep = "")) %>%
+  filter(location %in% my_locations) %>%
   select(-state, -county) %>%
-  group_by(date) %>%
-  summarize(retail_and_recreation = sum(retail_and_recreation, na.rm = TRUE), 
-            grocery_and_pharmacy  = sum(grocery_and_pharmacy, na.rm = TRUE),
-            parks                 = sum(parks, na.rm = TRUE),
-            transit_stations      = sum(transit_stations, na.rm = TRUE),
-            workplaces            = sum(workplaces, na.rm = TRUE),
-            residential           = sum(residential, na.rm = TRUE)) %>%
-  ungroup() %>%
+
+  # Pivot longer so we can turn it into a proper tsibble and interpolate missing data
+  pivot_longer(-c("date", "location")) %>%
+  pivot_wider(id_cols = "date", names_from = c("location", "name"), names_sep = ":", values_from = "value") %>%
   as_tsibble(index = date) %>%
   tsibble::fill_gaps() %>% 
-  na.locf() %>% 
-  mutate(trend_retail_and_recreation = retail_and_recreation %>% SMA(n = 7)) %>%
-  mutate(trend_grocery_and_pharmacy  = grocery_and_pharmacy  %>% SMA(n = 7)) %>%
-  mutate(trend_parks                 = parks                 %>% SMA(n = 7)) %>%
-  mutate(trend_transit_stations      = transit_stations      %>% SMA(n = 7)) %>%
-  mutate(trend_workplaces            = workplaces            %>% SMA(n = 7)) %>%
-  mutate(trend_residential           = residential           %>% SMA(n = 7)) %>%
+  as_tibble() %>%
+  pivot_longer(-date, names_to = c("location", "name"), names_sep = ":", values_to = "value") %>%
   
-  select(date, starts_with("trend_")) %>%
-  rename_at(vars(starts_with("trend_")),
-            ~ str_replace(., "trend_", "")) %>%
-  pivot_longer(-date) %>%
-  mutate(name = gsub("", "", name))
+  
+  # Now do a SMA of the data...
+  mutate(location = paste("values:", location, sep = "")) %>%
+  pivot_wider(id_cols = "date", names_from = c("location", "name"), names_sep = ":", values_from = "value") %>%
+  mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
+  mutate(across(starts_with("values:"),
+                .fns = list(trend = ~ (.) %>% ts() %>% mstl() %>% trendcycle()),
+                .names = "{fn}_{col}")) %>%
+  rename_at(vars(starts_with("trend_values")),
+            ~ str_replace(., "trend_values", "trend")) %>%
+  pivot_longer(-date, names_to = c("type", "location", "name"), names_sep = ":", values_to = "value") %>%
+  pivot_wider(id_cols = c("date", "location", "name"), names_from = "type", values_from = "value")
+  
 
 g_google <-
-  ggplot(data = google_tn, aes(x = as.Date(date))) +
+  ggplot(data = google_tn %>% subset(name == "workplaces"), aes(x = as.Date(date))) +
   theme_linedraw() +
-  geom_line(aes(y = value), color = "darkseagreen4", size = 1.0) +
+  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.0) +
   labs(title = "% Change from baseline") +
-  facet_wrap(~ name, scales = "free_y")
+  facet_wrap(~ location + name, scales = "free_y")
 
 print(g_google)
 
