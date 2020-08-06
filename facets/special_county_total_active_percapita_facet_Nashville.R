@@ -9,7 +9,14 @@ counties <- c("Montgomery", "Robertson",  "Sumner",
               "Cheatham",   "Davidson",   "Wilson",
               "Dickson",    "Williamson", "Rutherford")
 
-graph_color <- "steelblue2"
+mandate_df <- 
+  read_csv("data/mandates.csv", col_names = TRUE, col_types = "cDc") %>%
+  mutate(woy = week(effective_date)) %>%
+  filter(county %in% counties) %>%
+  filter(county != "Robertson")
+
+graph_color <- "darkred"
+#graph_color <- "darkseagreen4"
 
 county_pop <-
   tn_pop_df %>%
@@ -21,12 +28,13 @@ total_active <-
   select("Date", counties) %>%
   pivot_longer(-Date) %>%
   left_join(county_pop, by = c("name" = "County")) %>%
+  left_join(mandate_df, by = c("name" = "county")) %>%
   mutate(active_rate = 100 * value / POP2018) %>%
   rename(County = name) %>%
-  select(Date, County, active_rate) %>%
+#  select(Date, County, active_rate) %>%
   filter(Date >= as.Date("2020-06-01"))
 
-totact_title <- "Active COVID-19 Cases as % of County Population"
+totact_title <- "Active COVID-19 Cases as % of County Population\nwith dotted line showing date mask mandate for general public (if any) comes into effect"
 
 combined <-
   total_active# %>%
@@ -53,6 +61,8 @@ graph_total_active_county_percapita <-
   theme(axis.text.x = element_text(hjust = 0.8)) +
   theme(legend.title = element_blank()) +
   theme(legend.position = "none") +
+  
+  geom_vline(mapping = aes(xintercept = as.Date(effective_date)), linetype = "dotted") + 
 
   geom_line(color = graph_color, size = line_thickness) +
 
@@ -62,3 +72,4 @@ graph_total_active_county_percapita <-
   scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
   labs(title = totact_title, x = "", y = "")
 print(graph_total_active_county_percapita)
+

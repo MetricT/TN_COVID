@@ -4,6 +4,8 @@
 ###
 ### https://globalepidemics.org/key-metrics-for-covid-suppression
 ################################################################################
+library(ggpubr)
+
 scale     <- 100000
 scale_txt <- "100k"
 
@@ -26,16 +28,23 @@ this_map <-
   mutate(new_cases_percapita_last7 = scale * new_cases_last7 / POP2018) %>%
   mutate(
     color_code = case_when(
-      new_cases_percapita_last7 >= 25   ~ "> 25 daily new cases per 100k people",
+      new_cases_percapita_last7 >= 25   ~ "Tipping Point",
 
       new_cases_percapita_last7 <  25 &
-      new_cases_percapita_last7 >= 10   ~ "> 10 daily new cases per 100k people",
+      new_cases_percapita_last7 >= 10   ~ "Accelerated Spread",
 
       new_cases_percapita_last7 <  10 &
-      new_cases_percapita_last7 >= 1    ~ ">  1 daily new case  per 100k people",
+      new_cases_percapita_last7 >= 1    ~ "Community Spread",
       
-      new_cases_percapita_last7 <   1  ~ "<  1 daily new case  per 100k people",
+      new_cases_percapita_last7 <  1    ~ "On Track For Containment",
     ))
+
+this_map$color_code <-
+  factor(this_map$color_code,
+         levels = c("On Track For Containment", 
+                    "Community Spread", 
+                    "Accelerated Spread", 
+                    "Tipping Point"))
 
 new_cases_percapita_last7_label <- 
   (this_map$new_cases_percapita_last7) %>% round(1)
@@ -48,15 +57,28 @@ this_map$textcolor = if_else(this_map$new_cases_percapita_last7 > frac, "white",
 
 this_map$textcolor = "black"
 
+map_title <- paste("Harvard Global Health Institute COVID Risk Level Map [",
+                   new_cases_tib %>% tail(n = 1) %>% pull("Date"), "]",
+                   sep = "")
+
+map_subtitle <- paste("Average New Cases Per ", scale_txt, " Last 7 Days", sep = "")
+
+map_caption <- "Data Source: Tennessee Department of Health"
+
 map_new_cases_percapita_last7 <- 
   ggplot(this_map) +
   theme_void() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  theme(legend.title = element_blank()) +
-  theme(legend.position = "bottom") +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 20),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    plot.caption = element_text(hjust = 0.5, size = 12),
+    legend.title = element_blank(),
+    legend.text = element_text(size = 14),
+    legend.position = "bottom"
+  ) +
   geom_sf(data = this_map$geometry, aes(fill = this_map$color_code),
           size = geom_thickness, color = "white") +
-  geom_text(data = this_map, size = 3, 
+  geom_text(data = this_map, size = 4, 
             color = "black", #this_map$textcolor,
             aes(x     = county_centers$x,
                 y     = county_centers$y,
@@ -66,12 +88,10 @@ map_new_cases_percapita_last7 <-
   
   # Set the color scale manually
   scale_fill_manual(values = 
-                      c("> 25 daily new cases per 100k people" = "red",
-                        "> 10 daily new cases per 100k people" = "orange",
-                        ">  1 daily new case  per 100k people" = "yellow",
-                        "<  1 daily new case  per 100k people" = "green")) +
+                      c("Tipping Point"            = "firebrick2",
+                        "Accelerated Spread"       = "darkorange1",
+                        "Community Spread"         = "goldenrod1",
+                        "On Track For Containment" = "darkseagreen4")) +
   
-  labs(title = paste("Average New Cases Per ", scale_txt, " Last 7 Days - ", 
-                     new_cases_tib %>% tail(n = 1) %>% pull("Date"), sep = "")) 
+  labs(title = map_title, subtitle = map_subtitle, caption = map_caption) 
 print(map_new_cases_percapita_last7)
-

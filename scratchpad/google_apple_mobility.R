@@ -1,79 +1,122 @@
 library(tsibble)
 library(feasts)
 library(zoo)
+library(forecast)
 
+################################################################################
+### COVID-19 related mobile data
+################################################################################
 ###
-### From: https://www.apple.com/covid19/mobility  
+### Apple data available for direct download at:
 ###
+### https://www.apple.com/covid19/mobility  
+###
+### Google data available for direct download at:
+### 
+### https://www.google.com/covid19/mobility/
+###
+### I download the data from a Github aggregator (makes updating easier).  
+### You can download both datasets at:
+### https://github.com/ActiveConclusion/COVID19_mobility
+
+################################################################################
+### Load the data...
+################################################################################
 apple_mobility <-
-  "../Datasets/Mobility/applemobilitytrends-2020-08-01.csv" %>%
+  "../Datasets/ActiveConclusion/COVID19_mobility/apple_reports/apple_mobility_report_US.csv" %>%
   read_csv()
 
-###
-### From:  https://www.google.com/covid19/mobility/
-###
 google_mobility <-
-  "../Datasets/Mobility/Global_Mobility_Report.csv" %>%
+  "../Datasets/ActiveConclusion/COVID19_mobility/google_reports/mobility_report_US.csv" %>%
   read_csv()
 
+################################################################################
+### The data is subdivided by state and county, so you can select a particular
+### state or county.
+################################################################################
+my_state  <- c("Tennessee")
+my_county <- c("Cheatham County", "Davidson County", "Williamson County")
+
+### Pull data for the locations listed
 apple_county <-
   apple_mobility %>% 
   filter(geo_type == "county") %>%
-  select(-geo_type, -alternative_name, -country) %>%
-  rename(state = "sub-region", county = region) %>%
-  pivot_longer(-c("county", "transportation_type", "state"), names_to = "dates", values_to = "values") %>%
-  filter(state  == "Tennessee") %>%
-  filter(county == "Cheatham County") %>%
-  filter(transportation_type == "driving") %>%
-  select(dates, values) %>%
-  mutate(dates = as.Date(dates)) %>%
-  arrange(dates) 
+  rename(county = county_and_city) %>%
+  filter(state %in% my_state) %>%
+  filter(county %in% my_county) %>%
+  select(-geo_type, -transit, -walking) %>%
+  rename(values = driving, dates = date) %>%
+  mutate(location = paste("values:", county, ", ", state, sep = "")) %>%
+  select(dates, location, values) %>%
+  pivot_wider(id_cols = "dates", names_from = "location", values_from = "values") %>%
+  janitor::clean_names() %>%
+  arrange(dates)
 
+
+### Use mstl() to pluck out a trend line
 apple_model <-
   apple_county %>%
   as_tsibble() %>% 
   tsibble::fill_gaps() %>% 
   na.locf() %>% 
-  model(STL(values ~ trend())) %>%
-  components()
+  mutate(across(starts_with("values_"),
+                .fns = list(trend = ~ (.) %>% ts() %>% mstl() %>% trendcycle()),
+                .names = "{fn}_{col}")) %>%
+  rename_at(vars(starts_with("trend_values_")),
+          ~ str_replace(., "trend_values_", "trend:")) %>%
+  rename_at(vars(starts_with("values_")),
+            ~ str_replace(., "values_", "values:")) %>%
+  as_tibble() %>%
+  pivot_longer(-dates, names_to = c("type", "location"), names_sep = ":", values_to = "values") %>%
+  pivot_wider(id_cols = c("dates", "location"), names_from = "type", values_from = "values")
+
+
+### Create a facet map showing the data along with the trend for each location
+  
 
 g_apple <-
-  ggplot(data = apple_county, aes(x = as.Date(dates))) +
+  ggplot(data = apple_model, aes(x = as.Date(dates))) +
   theme_linedraw() +
+
   geom_point(aes(y = values), alpha = 0.5) +
-  geom_line(data = apple_model, aes(y = trend), size = 1, color = "firebrick3")
+   geom_line(aes(y = trend), size = 1, color = "firebrick3") +
+  
+  facet_wrap(~ location) +
+  
+  labs(
+       x = "Date", 
+       y = "Change in requests since January 13, 2020")
 print(g_apple)
 
 google_tn <-
   google_mobility %>% 
-  mutate(date = as.Date(date)) %>%
-  filter(country_region_code == "US") %>%
-  select(-country_region_code, -country_region, -sub_region_2, - iso_3166_2_code, -metro_area, -census_fips_code) %>%
-  rename(state = sub_region_1) %>%
+  janitor::clean_names() %>%
   filter(state == "Tennessee") %>%
-  select(-state) %>% 
+  filter(county == "Cheatham County") %>%
+  select(-state, -county) %>%
   group_by(date) %>%
-  summarize(retail_and_recreation_percent_change_from_baseline = sum(retail_and_recreation_percent_change_from_baseline, na.rm = TRUE), 
-            grocery_and_pharmacy_percent_change_from_baseline  = sum(grocery_and_pharmacy_percent_change_from_baseline, na.rm = TRUE),
-            parks_percent_change_from_baseline                 = sum(parks_percent_change_from_baseline, na.rm = TRUE),
-            transit_stations_percent_change_from_baseline      = sum(transit_stations_percent_change_from_baseline, na.rm = TRUE),
-            workplaces_percent_change_from_baseline            = sum(workplaces_percent_change_from_baseline, na.rm = TRUE),
-            residential_percent_change_from_baseline           = sum(residential_percent_change_from_baseline, na.rm = TRUE)) %>%
+  summarize(retail_and_recreation = sum(retail_and_recreation, na.rm = TRUE), 
+            grocery_and_pharmacy  = sum(grocery_and_pharmacy, na.rm = TRUE),
+            parks                 = sum(parks, na.rm = TRUE),
+            transit_stations      = sum(transit_stations, na.rm = TRUE),
+            workplaces            = sum(workplaces, na.rm = TRUE),
+            residential           = sum(residential, na.rm = TRUE)) %>%
   ungroup() %>%
   as_tsibble(index = date) %>%
   tsibble::fill_gaps() %>% 
   na.locf() %>% 
-  mutate(trend_retail_and_recreation_percent_change_from_baseline = retail_and_recreation_percent_change_from_baseline %>% SMA(n = 7)) %>%
-  mutate(trend_grocery_and_pharmacy_percent_change_from_baseline  = grocery_and_pharmacy_percent_change_from_baseline  %>% ts() %>% mstl() %>% trendcycle()) %>%
-  mutate(trend_parks_percent_change_from_baseline                 = parks_percent_change_from_baseline                 %>% ts() %>% mstl() %>% trendcycle()) %>%
-  mutate(trend_transit_stations_percent_change_from_baseline      = transit_stations_percent_change_from_baseline      %>% ts() %>% mstl() %>% trendcycle()) %>%
-  mutate(trend_workplaces_percent_change_from_baseline            = workplaces_percent_change_from_baseline            %>% ts() %>% mstl() %>% trendcycle()) %>%
-  mutate(trend_residential_percent_change_from_baseline           = residential_percent_change_from_baseline           %>% ts() %>% mstl() %>% trendcycle()) %>%
+  mutate(trend_retail_and_recreation = retail_and_recreation %>% SMA(n = 7)) %>%
+  mutate(trend_grocery_and_pharmacy  = grocery_and_pharmacy  %>% SMA(n = 7)) %>%
+  mutate(trend_parks                 = parks                 %>% SMA(n = 7)) %>%
+  mutate(trend_transit_stations      = transit_stations      %>% SMA(n = 7)) %>%
+  mutate(trend_workplaces            = workplaces            %>% SMA(n = 7)) %>%
+  mutate(trend_residential           = residential           %>% SMA(n = 7)) %>%
+  
   select(date, starts_with("trend_")) %>%
   rename_at(vars(starts_with("trend_")),
             ~ str_replace(., "trend_", "")) %>%
   pivot_longer(-date) %>%
-  mutate(name = gsub("_percent_change_from_baseline", "", name))
+  mutate(name = gsub("", "", name))
 
 g_google <-
   ggplot(data = google_tn, aes(x = as.Date(date))) +
@@ -86,12 +129,12 @@ print(g_google)
 
 tn_unemploy <-
   tribble(
-    ~date,        ~name,         ~value,
-    "2020-02-01",	"0 - TN unemployment", -3.4,
-    "2020-03-01",	"0 - TN unemployment", -3.3,
-    "2020-04-01",	"0 - TN unemployment", -15.5,
-    "2020-05-01",	"0 - TN unemployment", -11,
-    "2020-06-01",	"0 - TN unemployment", -9.7) %>%
+    ~date,        ~name,                 ~value,     ~g_workplace_avg,
+    "2020-02-01",	"0 - TN unemployment", -3.4,       -11.0,
+    "2020-03-01",	"0 - TN unemployment", -3.3,       -39.7,
+    "2020-04-01",	"0 - TN unemployment", -15.5,      -32.6,
+    "2020-05-01",	"0 - TN unemployment", -11,        -23.5,
+    "2020-06-01",	"0 - TN unemployment", -9.7,       -27.7) %>%
   mutate(date = as.Date(date))
 
 g_tn <-
@@ -121,11 +164,11 @@ print(g_google_unemploy)
 
 google_us <-
   google_mobility %>% 
-  mutate(date = as.Date(date)) %>%
-  filter(country_region_code == "US") %>%
-  select(date, workplaces_percent_change_from_baseline) %>%
+  filter(state == "Total") %>%
+  filter(county == "Total") %>%
+  select(date, workplaces) %>%
   group_by(date) %>%
-  summarize(workplaces_values = sum(workplaces_percent_change_from_baseline, na.rm = TRUE)) %>%
+  summarize(workplaces_values = sum(workplaces, na.rm = TRUE)) %>%
   ungroup() %>%
   as_tsibble(index = date) %>%
   tsibble::fill_gaps() %>% 
@@ -135,7 +178,7 @@ google_us <-
   pivot_longer(-date)
 
 unemploy_us <-
-  fredr(series_id = "UNRATE",
+  fredr(series_id = "TNURN",
         frequency = "m",
         observation_start = as.Date("2020-02-01")) %>%
   rename(name = series_id) %>%
@@ -160,5 +203,6 @@ g_google_unemploy_us <-
   geom_vline(xintercept = as.Date("2020-05-01"), linetype = "dotted") +
   geom_vline(xintercept = as.Date("2020-06-01"), linetype = "dotted") +
   geom_vline(xintercept = as.Date("2020-07-01"), linetype = "dotted") +
-  facet_wrap(~ name, scales = "free_y")
+  facet_wrap(~ name, scales = "free_y") +
+  labs(x = "Date")
 print(g_google_unemploy_us)

@@ -23,11 +23,7 @@ total_active <-
   select("Date", counties) %>%
   pivot_longer(-Date) %>%
   left_join(county_pop, by = c("name" = "County")) %>%
-  left_join(data, by = c("name" = "county")) %>%)
-  s
-
-
-            
+  left_join(data, by = c("name" = "county")) %>%
   mutate(active_rate = 100 * value / POP2018) %>%
   rename(County = name) %>%
   select(Date, County, active_rate) %>%
