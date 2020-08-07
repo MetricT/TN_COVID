@@ -11,7 +11,7 @@ use_spreadsheet <- 0
 
 if (use_spreadsheet == 1) {
   
-  wh_df_date <- as.Date("2020-08-02")
+  wh_df_date <- as.Date("2020-07-31")
   
   wh_df <-
     "data/WH-Task-Force-TN-State-Report.xlsx" %>%
@@ -35,7 +35,7 @@ if (use_spreadsheet == 1) {
   ### Use this to filter data after this date, so I can try to figure out what 
   ### date the White House is using to get their results.
   
-  last_date <- as.Date("2020-07-26")
+  last_date <- as.Date("2020-08-01")
 #  last_date <- as.Date(Sys.Date()) + 1  # Effectively disable it 
   
   wh_df_date <- last_date
