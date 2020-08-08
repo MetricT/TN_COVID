@@ -17,8 +17,9 @@ my_county <- c("Montgomery", "Robertson", "Sumner",
                "Cheatham",   "Davidson",  "Wilson",
                "Dickson",    "Williamson", "Rutherford")
 
-my_locations <- paste(my_county, " Co., ", my_state, sep = "")
+my_county <- c("Cheatham", "Davidson")
 
+my_locations <- paste(my_county, " Co., ", my_state, sep = "")
 
 ### Pull data on local mask mandates from a spreadsheet 
 mask_mandates_df <- 
@@ -133,17 +134,17 @@ title <- paste("Estimated R0 ",
 
 ### I'm using geofacet to render the facets, so it'll be easy to stick in a 
 ### grid for the entire state at a later date.
-my_grid <- data.frame(
-  row = c( 1, 1, 1,
-           2, 2, 2,
-           3, 3, 3),
-  col = c( 1, 2, 3,
-           1, 2, 3,
-           1, 2, 3),
-  code = my_locations,
-  name = my_locations,
-  stringsAsFactors = FALSE
-)
+#my_grid <- data.frame(
+#  row = c( 1, 1, 1,
+#           2, 2, 2,
+#           3, 3, 3),
+#  col = c( 1, 2, 3,
+#           1, 2, 3,
+#          1, 2, 3),
+#  code = my_locations,
+#  name = my_locations,
+#  stringsAsFactors = FALSE
+#)
 
 ### Render the graph and done!
 g <-
@@ -155,10 +156,11 @@ g <-
                   ymax = mean_r + std_r),
               color = NA, fill = "darkgrey", alpha = 0.2) +
   
-  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2, linetime = "dashed") +
+  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2) +
   
   geom_vline(mapping = aes(xintercept = as.Date(effective_date)), linetype = "dashed", color = "darkred") + 
   geom_hline(yintercept = 1, linetype = "dashed") + 
-  facet_geo(~ location, grid = my_grid) +
+#  facet_geo(~ location, grid = my_grid) +
+  facet_wrap(~ location) +
   labs(title = title, x = "", y = "R0")
 print(g)
