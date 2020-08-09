@@ -119,26 +119,26 @@ if (!exists("data_loaded")) {
   mmwr_df <-
     read_excel_url(mmwr_url) %>%
     mutate(DATE = as.Date(DATE))
+  
+  ################################################################################
+  ### Cleaning the state's data...
+  ################################################################################
+  ###
+  ### The State of TN missed one day's worth of data on 6/28.  That missing date
+  ### precludes several forms of analysis (particularly STL) which are useful.
+  ###
+  ### The script below interpolates the data for the missing data by taking the
+  ### values for the day before/after and splitting the difference.
+  ###
+  ### Comment out the line below if you want to use the "pure" data without my
+  ### fix
+  source("patches/2020-06-28/patch_injector.R")
+  #source("patch.R")
+  
+  ### Todo:  Add a patch for data earlier than the state's DB.   Just straight
+  ### data, no fancy patch
+  
 }
-
-
-
-################################################################################
-### Cleaning the state's data...
-################################################################################
-###
-### The State of TN missed one day's worth of data on 6/28.  That missing date
-### precludes several forms of analysis (particularly STL) which are useful.
-###
-### The script below interpolates the data for the missing data by taking the
-### values for the day before/after and splitting the difference.
-###
-### Comment out the line below if you want to use the "pure" data without my
-### fix
-source("patch.R")
-
-### Todo:  Add a patch for data earlier than the state's DB.   Just straight
-### data, no fancy patch
 
 
 ################################################################################

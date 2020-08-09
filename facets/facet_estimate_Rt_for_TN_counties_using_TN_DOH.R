@@ -16,14 +16,6 @@ my_county <- c("Montgomery", "Robertson", "Sumner",
                "Cheatham",   "Davidson",  "Wilson",
                "Dickson",    "Williamson", "Rutherford")
 
-#data <-
-#  county_school_df %>% 
-# select(DATE, COUNTY, NEW_CASES) %>% 
-#  filter(COUNTY %in% my_county) %>%
-#  filter(!is.na(NEW_CASES)) %>%
-#  rename(dates = DATE, county = COUNTY, I = NEW_CASES) %>%
-#  mutate(I = if_else(I < 0, 0, I))
-  
 data <-
   county_new_df %>% 
   select(DATE, COUNTY, NEW_CASES) %>% 
@@ -31,6 +23,9 @@ data <-
   filter(!is.na(NEW_CASES)) %>%
   rename(dates = DATE, county = COUNTY, I = NEW_CASES) %>%
   mutate(I = if_else(I < 0, 0, I)) 
+
+mask_mandates_df <-
+  read_csv("data/mandates.csv")
 
 ### Serial Interval estimates from:
 ### https://wwwnc.cdc.gov/eid/article/26/6/20-0357_article
@@ -136,4 +131,3 @@ g <-
   facet_geo(~ county, grid = my_grid) +
   labs(title = title, x = "", y = "R0")
 print(g)
-

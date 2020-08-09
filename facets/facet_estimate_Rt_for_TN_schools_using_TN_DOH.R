@@ -25,7 +25,7 @@ start_dates <-
   "Sumner",      "2020-08-03",
   "Cheatham",    "2020-08-13",
   "Davidson",    "2020-08-04",
-  "Wilson",      "2020-08-03",
+  "Wilson",      "2020-08-17",
   "Dickson",     "2020-08-03",
   "Williamson",  "2020-08-07",
   "Rutherford",  "2020-08-13",
@@ -70,7 +70,7 @@ data <-
   # These are usually due to suspected cases being lumped in and subsequently 
   # found to not be COVID.
   mutate(I = if_else(I < 0, 0, I))
-  
+
 
 ################################################################################
 ### The model EpiEstim uses requires the "serial interval", ie the lag in time
@@ -194,8 +194,13 @@ g <-
   geom_hline(yintercept = 1, linetype = "dashed") + 
   
   geom_vline(aes(xintercept = as.Date(first_day)), linetype = "dotted") +
+ 
+  facet_wrap(~location) + 
+   
+#  facet_geo(~ location, grid = my_grid) +
   
-  facet_geo(~ location, grid = my_grid) +
+  scale_y_continuous(limits = c(0, 2)) +
+  
   # facet_wrap(~ location) + # Uncomment this if you don't want to use a geofacet grid
   labs(title = title, x = "", y = "Rt")
 print(g)
