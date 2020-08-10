@@ -22,7 +22,8 @@ data <-
   filter(COUNTY %in% my_county) %>%
   filter(!is.na(NEW_CASES)) %>%
   rename(dates = DATE, county = COUNTY, I = NEW_CASES) %>%
-  mutate(I = if_else(I < 0, 0, I)) 
+  mutate(I = if_else(I < 0, 0, I)) %>%
+  filter(dates >= as.Date("2020-06-01"))
 
 mask_mandates_df <-
   read_csv("data/mandates.csv")
@@ -33,12 +34,12 @@ si_mean <- 3.96
 si_std  <- 4.75
 
 ### Create a blank tibble to hold our EpiEstim output
-r0_tib <-
+Rt_tib <-
   tribble(
     ~dates, ~mean_r, ~std_r, ~county,
   )
 
-### Iterate over all countys and generate the EpiEstim estimate for R0
+### Iterate over all countys and generate the EpiEstim estimate for Rt
 for (this_county in data %>% pull("county") %>% unique()) {
   
   print(this_county)
@@ -64,15 +65,15 @@ for (this_county in data %>% pull("county") %>% unique()) {
     rename(dates = value) %>%
     mutate(county = this_county)
   
-  r0_tib <-
-    r0_tib %>%
+  Rt_tib <-
+    Rt_tib %>%
     bind_rows(r_data)
   
 }
 
-### Take the r0_tib estimates and compute mstl() trends
+### Take the Rt_tib estimates and compute mstl() trends
 trend_tib <-
-  r0_tib %>%
+  Rt_tib %>%
   select(dates, county, mean_r) %>% 
   mutate(county = paste("values:", county, sep = "")) %>%
   pivot_wider(id_cols = "dates", 
@@ -87,14 +88,14 @@ trend_tib <-
   pivot_longer(-dates, names_to = "county", values_to = "trend")
 
 
-### Add our trend and mask mandate data to the r0 tibble
-r0_tib <-
-  r0_tib %>%
+### Add our trend and mask mandate data to the Rt tibble
+Rt_tib <-
+  Rt_tib %>%
   left_join(trend_tib, by = c("dates" = "dates", "county" = "county")) %>%
   left_join(mask_mandates_df, by = "county")
 
 ### Title for our graph
-title <- paste("Estimated R0 ", 
+title <- paste("Estimated Rt ", 
                "assuming mean(serial interval) = ", si_mean, 
                " days and std(serial interval) = ", si_std, " days", sep = "")
 
@@ -114,7 +115,7 @@ my_grid <- data.frame(
 
 ### Render the graph and done!
 g <-
-  ggplot(data = r0_tib, aes(x = as.Date(dates))) +
+  ggplot(data = Rt_tib, aes(x = as.Date(dates))) +
   theme_linedraw() +
   theme(strip.text.x = element_text(size = 16)) +
   geom_point(aes(y = mean_r), size = 1.0) + 
@@ -129,5 +130,5 @@ g <-
   scale_y_continuous(limits = c(0, 2)) +
   #facet_wrap(~ county) +
   facet_geo(~ county, grid = my_grid) +
-  labs(title = title, x = "", y = "R0")
+  labs(title = title, x = "", y = "Rt")
 print(g)

@@ -4,17 +4,18 @@
 
 ### Load the necessary libraries
 packages <- 
-  c("tidyverse", "lubridate", "tsibble", "EpiEstim", "curl", "geofacet", 
-    "forecast", "TTR")
+  c("tidyverse", "lubridate", "tsibble", "EpiEstim", "curl", "forecast", "TTR")
 
 new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
 if (length(new_packages)) install.packages(new_packages, quiet = TRUE)
 invisible(lapply(packages, "library", quietly = TRUE,
                  character.only = TRUE, warn.conflicts = FALSE))
 
-### Choose the counties you want to add to the facet graph
+### Choose the counties you want to add to the facet graph.  They will also graph
+### in this order, so arrange them how you want.
 my_location <- 
-  c("Montgomery", "Robertson", "Sumner", "Cheatham",   "Davidson",  "Wilson",
+  c("Montgomery", "Robertson", "Sumner", 
+    "Cheatham",   "Davidson",  "Wilson",
     "Dickson",    "Williamson", "Rutherford")
 
 start_dates <- 
@@ -50,6 +51,41 @@ read_excel_url <- function(url, ...) {
   return(readxl::read_excel(tf, ...))
 }
 
+###  Alternative way of collecting data, not used right now
+#data <- 
+#  age_by_county_df %>%
+#  filter(AGE_GROUP %in% c("0-10 years", 
+#                          "11-20 years")) %>% 
+#  group_by(DATE, COUNTY) %>% 
+#  summarize(I = sum(CASE_COUNT)) %>%
+#  ungroup() %>%
+#  rename(dates = DATE,
+#         location = COUNTY) %>%
+#  
+#  ### The data above is total case count.   Pivot and compute new case count
+#  pivot_wider(id_cols = "dates", names_from = "location", values_from = "I") %>%
+#  mutate(across(!starts_with("dates"),
+#                .fns = list(new = ~ c(0, diff(.))),
+#                .names = "{fn}_{col}"
+#  )) %>%
+#  select(dates, starts_with("new_")) %>%
+#  rename_at(vars(starts_with("new_")),
+#            ~ str_replace(., "new_", "")) %>%
+#  pivot_longer(-dates, names_to = "location", values_to = "I") %>%
+#  
+#  # Filter it to just the locations specified
+#  filter(location %in% my_location) %>%
+#  
+#  # Filter out cases where "I" is a NA
+#  filter(!is.na(I)) %>%
+#  
+#  # Also, estimate_R can't handle negative numbers, so set negative values to 0.
+#  # These are usually due to suspected cases being lumped in and subsequently 
+#  # found to not be COVID.
+#  mutate(I = if_else(I < 0, 0, I)) %>%
+#  filter(date >= as.Date("2020-07-01"))
+
+
 ### Load case data for schools
 data <-
   "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/Public-Dataset-Daily-County-School.XLSX" %>%
@@ -60,16 +96,16 @@ data <-
          I        = NEW_CASES,
          location = COUNTY) %>%
   
-  # Filter it to just the locations specified
-  filter(location %in% my_location) %>%
+# Filter it to just the locations specified
+filter(location %in% my_location) %>%
   
-  # Filter out cases where "I" is a NA
-  filter(!is.na(I)) %>%
+# Filter out cases wh#ere "I" is a NA
+filter(!is.na(I)) %>%
 
-  # Also, estimate_R can't handle negative numbers, so set negative values to 0.
-  # These are usually due to suspected cases being lumped in and subsequently 
-  # found to not be COVID.
-  mutate(I = if_else(I < 0, 0, I))
+# Also, estimate_R can't handle negative numbers, so set negative values to 0.
+# These are usually due to suspected cases being lumped in and subsequently 
+# found to not be COVID.
+mutate(I = if_else(I < 0, 0, I))
 
 
 ################################################################################
@@ -155,30 +191,17 @@ Rt_tib <-
   left_join(start_dates, by = c("location" = "county"))
 
 
-
-### I'm using geofacet to render the facets for middle TN.   For other locations,
-### either find a more suitable facet grid, create your own, or just ignore it
-### and use factor()/facet_wrap() to arrange it how you wish.
-my_grid <- data.frame(
-  row = c( 1, 1, 1,
-           2, 2, 2,
-           3, 3, 3),
-  col = c( 1, 2, 3,
-           1, 2, 3,
-           1, 2, 3),
-  code = my_location,
-  name = my_location,
-  stringsAsFactors = FALSE
-)
-
 ################################################################################
 ### Render the graph and done
 ################################################################################
-
 ### Title for our graph
-title <- paste("Estimated Rt ", 
-               "assuming mean(serial interval) = ", si_mean, 
-               " days and std(serial interval) = ", si_std, " days", sep = "")
+title <- "Estimated Rt among children ages 5-18"
+
+subtitle <- paste("assuming mean(serial interval) = ", si_mean, 
+                  " days and std(serial interval) = ", si_std, " days", sep = "")
+
+### Order counties in the order given in my_location at the top of the script
+Rt_tib$location <- factor(Rt_tib$location, levels = my_location)
 
 g <-
   ggplot(data = Rt_tib, aes(x = as.Date(dates))) +
@@ -197,10 +220,7 @@ g <-
  
   facet_wrap(~location) + 
    
-#  facet_geo(~ location, grid = my_grid) +
-  
   scale_y_continuous(limits = c(0, 2)) +
   
-  # facet_wrap(~ location) + # Uncomment this if you don't want to use a geofacet grid
-  labs(title = title, x = "", y = "Rt")
+  labs(title = title, subtitle = subtitle, x = "", y = "Rt")
 print(g)

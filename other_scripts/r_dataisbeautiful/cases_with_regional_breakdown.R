@@ -12,7 +12,7 @@ library(TTR)
 ### Download this Github repo and add the path to the spreadsheet
 ### https://github.com/nytimes/covid-19-data
 ### Note that this data is *total* cases, so I need to convert it to *new* cases
-if (!exists("data_loaded")) {
+#if (!exists("data_loaded")) {
 
   # Remove these territories from our data
   remove_states <- 
@@ -32,7 +32,7 @@ if (!exists("data_loaded")) {
     mutate(cases = if_else(state == "New York" & date >= as.Date("2020-06-30"), cases - 610, cases))
   
     data_loaded <- 1
-}
+#}
 
 ### Pluck the date out to include in our graph
 current_date <- spreadsheet %>% arrange(date) %>% tail(n = 1) %>% pull("date")
@@ -134,7 +134,7 @@ g_regional_curves_cases <-
                                "region_4" = "#41b6c4")) +
     
   facet_wrap(~ name, nrow = 4, ncol = 1, strip.position = "right")
-print(g_regional_curves_cases)
+#print(g_regional_curves_cases)
 
 ################################################################################
 ### Draw the inset USA map 
@@ -153,7 +153,7 @@ g_map_usa_regions_cases <-
   ggplot(data = state_map) +
   theme_void() + 
   geom_sf(fill = state_map$color, color="black", size = 0.4, alpha = 0.8)
-print(g_map_usa_regions_cases)
+#print(g_map_usa_regions_cases)
 
 ################################################################################
 ### Draw the main graph (stacked line graph of cases)
@@ -195,6 +195,9 @@ up_rate <-
 
 up_rate <- round(100 * (up_rate[2] - up_rate[1]) / up_rate[1], 2)
 
+up_rate_txt <- "Up"
+if (up_rate < 0) {
+  up_rate_txt <- "Down"}
 
 subtitle <-
   paste(total_cases %>% format(big.mark = ",", scientific = FALSE), 
@@ -202,7 +205,7 @@ subtitle <-
         round(10000 * total_cases / 327533795, 1),
         " per 10,000 people)\n",
         "Growing at ", growing_at, " new cases/day\n",
-        "Up ", up_rate, "% from 7 days ago",
+        up_rate_txt, " ", abs(up_rate), "% from 7 days ago",
         sep = "")
 
 g_cases_stacked <-
@@ -221,7 +224,7 @@ g_cases_stacked <-
        x = "Date", 
        y = "Daily Cases",
        caption = caption)
-print(g_cases_stacked)
+#print(g_cases_stacked)
 
 ################################################################################
 ### Draw the inset stacked graph percent chart in the upper-right
@@ -238,15 +241,20 @@ per_data <-
 g_cases_stacked_per <-
   ggplot(data = per_data, aes(x = as.Date(date), y = percentage, fill = region_sep)) + 
   theme_linedraw() + 
-  theme(legend.title = element_blank()) +
-  theme(legend.position = "none") +
+  theme(legend.title = element_blank(),
+        legend.position = "none",
+  #      panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA)
+        
+  ) +
+  
   geom_area(color="black", size = 0.4, alpha=.8) +
   scale_fill_manual(values = c("region_1" = "#ffffcc",
                                "region_2" = "#a1dab4",
                                "region_3" = "#225ea8",
                                "region_4" = "#41b6c4")) +
   labs(title = "Proportion of National Daily Cases", x = "", y = "")
-print(g_cases_stacked_per)
+#print(g_cases_stacked_per)
 
 
 ################################################################################

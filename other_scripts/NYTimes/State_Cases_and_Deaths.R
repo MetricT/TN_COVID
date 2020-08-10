@@ -10,7 +10,7 @@ my_state <- "Tennessee"
 scale <- 110
 
 ### What is the lag in days between cases and deaths
-lag_st <- 7
+lag_st <- 8
 
 # Download this Github repo and add the path to the spreadsheet
 # https://github.com/nytimes/covid-19-data

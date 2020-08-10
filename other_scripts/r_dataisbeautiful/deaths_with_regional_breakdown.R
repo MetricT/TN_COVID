@@ -13,7 +13,7 @@ library(TTR)
 ### Download this Github repo and add the path to the spreadsheet
 ### https://github.com/nytimes/covid-19-data
 ### Note that this data is *total* deaths, so I need to convert it to *new* deaths
-if (!exists("data_loaded")) {
+#if (!exists("data_loaded")) {
 
   # Remove these territories from our data
   remove_states <- 
@@ -24,17 +24,27 @@ if (!exists("data_loaded")) {
   spreadsheet <- 
     "../Datasets/nytimes/covid-19-data/us-states.csv" %>%
     read_csv(col_names = TRUE, col_types = "Dccdd") %>%
-    filter(!state %in% remove_states) %>%
+    filter(!state %in% remove_states)
 
+  # Comment this out if you want to graph raw data.   I've added a few tweaks due to either states releasing
+  # a backlog of deaths at once, or due to changes in methodology on how they report deaths.    Commenting it 
+  # out gives you the most "accurate" data, while leaving it in gives the best idea about the underlying
+  # trends.   There are other states which had those, but they're small enough (Delaware, Hawaii, Alaska) to ignore
+  spreadsheet <-
+    spreadsheet %>%
+    
     ### A special one for New Jersey...
     mutate(deaths = if_else(state == "New Jersey" & date >= as.Date("2020-06-25"), deaths - 1877, deaths)) %>%
   
     ### And two for New York...
     mutate(deaths = if_else(state == "New York" & date >= as.Date("2020-05-06"), deaths - 694, deaths)) %>%
-    mutate(deaths = if_else(state == "New York" & date >= as.Date("2020-06-30"), deaths - 610, deaths))
+    mutate(deaths = if_else(state == "New York" & date >= as.Date("2020-06-30"), deaths - 610, deaths)) %>%
   
+    ### Gotta mess with Texas...
+    mutate(deaths = if_else(state == "Texas"    & date >= as.Date("2020-07-27"), deaths - 1007, deaths))
+    
     data_loaded <- 1
-}
+#}
 
 ### Pluck the date out to include in our graph
 current_date <- spreadsheet %>% arrange(date) %>% tail(n = 1) %>% pull("date")
@@ -82,10 +92,6 @@ data <-
   spreadsheet %>%
   filter(!is.na(deaths)) %>%
   filter(deaths != 0) %>%
-  
-  ### A special one for New Jersey...
-  #mutate(deaths = if_else(state == "New Jersey" & date >= as.Date("2020-06-25"), deaths - 1877, deaths)) %>%
-  
   arrange(date) %>% 
   left_join(state_df, by = "state") %>%
   group_by(date, region) %>%
@@ -197,6 +203,9 @@ up_rate <-
 
 up_rate <- round(100 * (up_rate[2] - up_rate[1]) / up_rate[1], 2)
 
+up_rate_txt <- "Up"
+if (up_rate < 0) {
+  up_rate_txt <- "Down"}
 
 subtitle <-
   paste(total_deaths %>% format(big.mark = ",", scientific = FALSE), 
@@ -204,7 +213,7 @@ subtitle <-
         round(10000 * total_deaths / 327533795, 1),
         " per 10,000 people)\n",
         "Growing at ", growing_at, " new deaths/day\n",
-        "Up ", up_rate, "% from 7 days ago",
+        up_rate_txt," ", abs(up_rate), "% from 7 days ago",
         sep = "")
 
 g_deaths_stacked <-
@@ -213,7 +222,6 @@ g_deaths_stacked <-
   theme(legend.title = element_blank()) +
   theme(legend.position = "none") +
   geom_area(color="black", size = 0.4, alpha = 0.8) +
-  geom_vline(xintercept = as.Date("2020-07-01"), linetype = "dashed") +
   scale_fill_manual(values = c("region_1" = "#ffffcc",
                                "region_2" = "#a1dab4",
                                "region_3" = "#225ea8",
@@ -241,8 +249,12 @@ per_data <-
 g_deaths_stacked_per <-
   ggplot(data = per_data, aes(x = as.Date(date), y = percentage, fill = region_sep)) + 
   theme_linedraw() + 
-  theme(legend.title = element_blank()) +
-  theme(legend.position = "none") +
+  theme(legend.title = element_blank(),
+        legend.position = "none",
+        #      panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA)
+        
+  ) +
   geom_area(color="black", size = 0.4, alpha=.8) +
   scale_fill_manual(values = c("region_1" = "#ffffcc",
                                "region_2" = "#a1dab4",
@@ -275,3 +287,7 @@ g_final_deaths <-
                   ymax = 1250)
 print(g_final_deaths)
 
+
+plot_grid(g_final_cases,
+          g_final_deaths, 
+          nrow = 2, ncol = 1, align = "hv")
