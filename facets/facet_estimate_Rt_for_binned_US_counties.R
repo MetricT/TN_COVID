@@ -8,12 +8,27 @@ library(feasts)
 library(EpiEstim)
 library(forecast)
 
-### Choose the countys you want to add to the facet graph
-my_county <- c("Montgomery", "Robertson", "Sumner",
-               "Cheatham",   "Davidson",  "Wilson",
-               "Dickson",    "Williamson", "Rutherford")
+### Get county population and divide them into bins according to population
+pop_bins <-
+  county_acs %>%
+  select(NAME, POP2018) %>%
+  mutate(NAME = gsub(" County, Tennessee", "", NAME)) %>%
+  arrange(desc(POP2018)) %>%
+  mutate(cum_pop = cumsum(POP2018)) %>%
+  mutate(cum_pop_frac = cum_pop / 6651089) %>%
+  mutate(pop_bin = case_when(
+    cum_pop_frac <  0.25   ~ "Highest Population",
+    cum_pop_frac >= 0.25 &
+    cum_pop_frac <  0.50   ~ "High Population",
+    cum_pop_frac >= 0.50 &
+    cum_pop_frac <  0.75   ~ "Low Population",
+    cum_pop_frac >= 0.75   ~ "Lowest Population",
+  ))
 
-#my_county <- c("Cheatham")
+pop_bins$pop_bin <- factor(pop_bins$pop_bin, levels = c("Highest Population", "High Population", "Low Population", "Lowest Population"
+                                                        ))
+
+ggplot(data = pop_bins, aes(fill = factor(pop_bin))) + theme_void() + geom_sf() + theme(plot.title = element_text(hjust = 0.5)) + theme(legend.title = element_blank()) + labs(title = "Tennessee Counties binned by population") + scale_fill_viridis(discrete = TRUE, option = "inferno")
 
 data <-
   county_new_df %>% 

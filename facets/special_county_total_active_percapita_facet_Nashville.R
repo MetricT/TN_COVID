@@ -9,14 +9,16 @@ counties <- c("Montgomery", "Robertson",  "Sumner",
               "Cheatham",   "Davidson",   "Wilson",
               "Dickson",    "Williamson", "Rutherford")
 
+#counties <- county_names
+
 mandate_df <- 
   read_csv("data/mandates.csv", col_names = TRUE, col_types = "cDc") %>%
   mutate(woy = week(effective_date)) %>%
   filter(county %in% counties) %>%
   filter(county != "Robertson")
 
-graph_color <- "darkred"
-#graph_color <- "darkseagreen4"
+#graph_color <- "darkred"
+graph_color <- "darkseagreen4"
 
 county_pop <-
   tn_pop_df %>%
@@ -42,17 +44,17 @@ combined <-
 #  full_join(forecast_1_per, by = c("Date" = "date"))
 
 
-my_grid <- data.frame(
-  row = c( 1, 1, 1,
-           2, 2, 2,
-           3, 3, 3),
-  col = c( 1, 2, 3,
-           1, 2, 3,
-           1, 2, 3),
-  code = counties,
-  name = counties,
-  stringsAsFactors = FALSE
-)
+#my_grid <- data.frame(
+#  row = c( 1, 1, 1,
+#           2, 2, 2,
+#           3, 3, 3),
+#  col = c( 1, 2, 3,
+#           1, 2, 3,
+#           1, 2, 3),
+#  code = counties,
+#  name = counties,
+#  stringsAsFactors = FALSE
+#)
 
 #combined <-
 #  combined %>%
@@ -71,12 +73,14 @@ graph_total_active_county_percapita <-
   theme(legend.position = "none") +
   
   geom_vline(mapping = aes(xintercept = as.Date(effective_date)), linetype = "dotted") + 
+  geom_vline(xintercept = as.Date("2020-07-19"), linetype = "dashed") + 
+  
+  
+  geom_line(color = graph_color, size = line_thickness) +
 
-  geom_line(color = "firebrick2", size = line_thickness) +
-
-  facet_geo(~ County, grid = my_grid) +
+  facet_wrap(~ County) +#, grid = my_grid) +
 
   scale_x_date(date_labels = "%m/%d") +
-  scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
+  scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010), limits = c(0, 0.015)) +
   labs(title = totact_title, x = "", y = "")
 print(graph_total_active_county_percapita)

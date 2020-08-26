@@ -28,7 +28,7 @@ this_map <-
 
 new_active_percapita_last7_label <-
   (scale * this_map$new_active_percapita_last7) %>% round(2)
-new_active_percapita_last7_label[new_active_percapita_last7_label == 0] <- ""
+new_active_percapita_last7_label[new_active_percapita_last7_label == 0] <- "0"
 
 ### By default use black for the font, but if the value is over 1/2's of the way
 ### to the max, use the white font instead as it looks nicer

@@ -2,6 +2,7 @@ library(tsibble)
 library(feasts)
 library(zoo)
 library(forecast)
+library(fredr)
 
 ################################################################################
 ### COVID-19 related mobile data
@@ -18,12 +19,12 @@ library(forecast)
 ################################################################################
 ### Load the data...
 ################################################################################
-google_mobility <-
-  "../Datasets/ActiveConclusion/COVID19_mobility/google_reports/mobility_report_US.csv" %>%
-  read_csv()
+#google_mobility <-
+#  "../Datasets/ActiveConclusion/COVID19_mobility/google_reports/mobility_report_US.csv" %>%
+#  read_csv()
 
 google_mobility <-
-  "../Google/Global_Mobility_Report.csv" %>%
+  "../Datasets/Global_Mobility_Report.csv" %>%
   read_csv()
 
 google_us <-
@@ -46,12 +47,19 @@ unemploy_us <-
   mutate(name = "0 - US Unemployment [UNRATE]") %>%
   mutate(value = - value)
 
+civpart <-
+  fredr(series_id = "CIVPART",
+        frequency = "m",
+        observation_start = as.Date("2020-02-01")) %>%
+  rename(name = series_id) %>%
+  mutate(name = "Labor Force Participation Rate [CIVPART]")
+
 g_us <-
   google_us %>% 
   as_tibble() %>%
   mutate(date = as.Date(date) - 8) %>%
 #  mutate(name = "Google change in visits to workplace in US,\n% change from baseline") %>%
-  bind_rows(unemploy_us)
+  bind_rows(civpart)
 
 g_google_unemploy_us <-
   ggplot(data = g_us, aes(x = as.Date(date))) +
@@ -68,3 +76,4 @@ g_google_unemploy_us <-
   facet_wrap(~ name, scales = "free_y") +
   labs(x = "Date")
 print(g_google_unemploy_us)
+

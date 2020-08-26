@@ -74,8 +74,9 @@ if (!exists("data_loaded")) {
   daily_case_url         <- paste(url_root, "Daily-Case-Info.XLSX", sep = "")
   county_new_url         <- paste(url_root, "County-New.XLSX", sep = "")
   race_ethnicity_sex_url <- paste(url_root, "RaceEthSex.XLSX", sep = "")
-  county_school_url      <- paste(url_root, "Daily-County-School.XLSX", sep = "")
+  county_school_url      <- paste(url_root, "Daily-County-Cases-5-18-Years.XLSX", sep = "")
   mmwr_url               <- paste(url_root, "MMWR-Week-Case-Count.XLSX", sep = "")
+
   
   ### Read 'em in...
   age_ss_df <-

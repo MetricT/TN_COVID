@@ -37,16 +37,17 @@ g_cases_and_deaths <-
   geom_point(aes(x = as.Date(date), y = new_deaths * scale, color = "Deaths"), size = 1, shape = 19, alpha = 0.2) +
   geom_line(aes(x = as.Date(date), y = new_deaths_trend * scale, color = "Deaths"), size = 1.3) +
 
-  geom_vline(xintercept = as.Date("2020-06-03"), linetype = "dashed") + 
+  #geom_vline(xintercept = as.Date("2020-06-03"), linetype = "dashed") + 
   
   scale_y_continuous(labels = scales::comma)+  
   
   scale_color_manual(values =  c("Cases" = "steelblue2",
                                  "Deaths" = "firebrick2")) +
   
-  labs(title = paste("US New Cases (blue) and New Deaths (red) as of ", current_date, sep = ""), 
+  labs(title = paste("US New Cases (blue) and New Deaths (red) with 7 day lag as of ", current_date, sep = ""), 
        x = "Date", 
        y = "")
   
 
 print(g_cases_and_deaths)
+

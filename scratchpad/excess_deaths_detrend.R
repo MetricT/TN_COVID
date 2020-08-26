@@ -31,19 +31,22 @@ deaths <-
          week = mmwr_week,
          deaths = all_cause,
          state = jurisdiction_of_occurrence) %>%
+#  mutate(year = as.integer(year)) %>%
+#  mutate(week = as.integer(week)) %>%
   
+  ### 2014 has 53 months for unknown reasons, so remove the first and renumber
+  mutate(week = if_else(year == 2014, week - 1, week)) %>% 
+  filter(week != 0) %>%
+   
   ### Comment out the line below to get graphs for all 50 states
   #filter(state %in% c("United States", "Tennessee")) %>%
   #filter(state %in% c("Tennessee")) %>%
-  #filter(state %in% c("United States")) %>%
+  filter(state %in% c("United States")) %>%
   
   mutate(thisyear = (year == 2020)) %>%
   group_by(state, year) %>%
 
-  ### Filter out the first week in 2014, as it appears to be a huge outlier
-  filter(!(year == 2014 & week == 1)) %>%
-
-  ### Also filter out the most recent two weeks worth of data as the provisional
+  ### Filter out the most recent two weeks worth of data as the provisional
   ### data it is based on as:
   ###
   ### "Last available weeks (not just lastone) are incomplete, and therefore,
@@ -51,9 +54,39 @@ deaths <-
   ###  incompleteness changes slightly every week. "
   ###
   ### https://www.mortality.org/Public/STMF_DOC/STMFmetadata.pdf
-  filter(!(year == 2020 & week %in% seq(max(week) - 2, max(week))))
+  filter(!(year == 2020 & week %in% seq(max(week) - 1, max(week)))) %>%
+  ungroup() %>%
+  mutate(yearweek = paste(year, " W", week, sep = "")) %>%
+  mutate(yearweek = yearweek(yearweek)) %>%
+  as_tsibble(index = "yearweek") %>%
+  tsibble::fill_gaps() %>%
+  na.locf() #%>%
+  #as_tibble()
+    
 
+model <-
+  deaths %>%
+  select(yearweek, deaths) %>%
+  model(STL(deaths ~ trend(window = 365) + season(period = "year"))) %>%
+  components()
 
+model_trend <- (max(model$trend) - model$trend) %>% as_tibble() %>% rename(model_trend = value)
+
+deaths <- 
+  deaths %>% 
+  bind_cols(model_trend) %>% 
+  as_tibble() %>%
+  mutate(adj_deaths = deaths + model_trend) %>%
+  select(-deaths) %>%
+  rename(deaths = adj_deaths) %>%
+  mutate(nweek = week(yearweek),
+         nyear = year(yearweek)) %>%
+  filter(yearweek != yearweek("2014 W01")) %>%
+  select(-year, - week) %>%
+  rename(week = nweek,
+         year = nyear) %>%
+  filter(!(year == 2020 & week == 52))
+ 
 ### Create a graph of weekly deaths by state
 g_weekly_deaths <-
   ggplot(data = deaths, aes(x = week, y = deaths, group = year)) +
@@ -65,7 +98,9 @@ g_weekly_deaths <-
   ggtitle("Weekly deaths") +
   labs(x = "Week", y = "") +
   geom_hline(yintercept = 0, col = "gray") +
-  scale_y_continuous(labels = scales::comma, limits = c(0, 80000))
+  scale_x_continuous(breaks = c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 52)) + 
+  scale_y_continuous(labels = scales::comma, 
+                     limits = c(50000, 80000))
 print(g_weekly_deaths)
 
 
@@ -74,6 +109,7 @@ deaths %>%
   filter(year == 2020) %>%
   group_by(state) %>%
   summarise(last_week = max(week)) %>%
+  ungroup() %>%
   mutate(
     current_week = lubridate::week(Sys.Date()),
     lag = current_week - last_week
@@ -103,22 +139,23 @@ g_excess_deaths <-
   guides(col = FALSE) +
   ggtitle("Excess deaths") +
   labs(x = "Week", y = "") +
+  scale_x_continuous(breaks = c(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 52)) + 
   scale_y_continuous(labels = scales::comma)
 print(g_excess_deaths)
 
 ### Summarize excess deaths
 excess_deaths %>%
   filter(year == 2020) %>%
+  filter(excess >= 0) %>%
   group_by(state) %>%
   summarise(
     excess = sum(excess),
     last_week = max(week),
     as_at = as.Date("2020-01-01") + 7 * (last_week - 1)
   ) %>%
+  ungroup() %>%
   select(state, excess, as_at) %>%
   data.frame()
-
 plot_grid(g_weekly_deaths,
           g_excess_deaths,
           nrow = 1, ncol = 2, align = "hv")
-

@@ -35,7 +35,7 @@ google_mobility <-
 ### state or county.
 ################################################################################
 my_state  <- c("Tennessee")
-my_county <- c("Cheatham County", "Davidson County", "Williamson County", "Dickson County")
+my_county <- c("Cheatham County", "Davidson County", "Williamson County", "Dickson County", "Sevier County")
 
 ### Doing it this way so you can specify counties in multiple states and compare
 my_locations <- paste(my_county, ", ", my_state, sep = "")

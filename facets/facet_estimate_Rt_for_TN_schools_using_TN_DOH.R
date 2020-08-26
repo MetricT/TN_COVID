@@ -18,6 +18,8 @@ my_location <-
     "Cheatham",   "Davidson",  "Wilson",
     "Dickson",    "Williamson", "Rutherford")
 
+my_location <- c("Cheatham")
+
 start_dates <- 
   tribble(
   ~county,       ~first_day,
@@ -88,7 +90,7 @@ read_excel_url <- function(url, ...) {
 
 ### Load case data for schools
 data <-
-  "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/Public-Dataset-Daily-County-School.XLSX" %>%
+  "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/Public-Dataset-Daily-County-Cases-5-18-Years.XLSX" %>%
   read_excel_url() %>%
   mutate(DATE = as.Date(DATE)) %>%
   select(DATE, NEW_CASES, COUNTY) %>%
@@ -195,7 +197,8 @@ Rt_tib <-
 ### Render the graph and done
 ################################################################################
 ### Title for our graph
-title <- "Estimated Rt among children ages 5-18"
+title <- paste("Estimated Rt among children ages 5-18 - ", 
+               Rt_tib %>% tail(n = 1) %>% pull("dates"), sep = "")
 
 subtitle <- paste("assuming mean(serial interval) = ", si_mean, 
                   " days and std(serial interval) = ", si_std, " days", sep = "")
@@ -203,7 +206,7 @@ subtitle <- paste("assuming mean(serial interval) = ", si_mean,
 ### Order counties in the order given in my_location at the top of the script
 Rt_tib$location <- factor(Rt_tib$location, levels = my_location)
 
-g <-
+g_rt_schools <-
   ggplot(data = Rt_tib, aes(x = as.Date(dates))) +
   theme_linedraw() +
   theme(strip.text.x = element_text(size = 16)) +
@@ -222,5 +225,5 @@ g <-
    
   scale_y_continuous(limits = c(0, 2)) +
   
-  labs(title = title, subtitle = subtitle, x = "", y = "Rt")
-print(g)
+  labs(title = title, x = "", y = "Rt")
+print(g_rt_schools)

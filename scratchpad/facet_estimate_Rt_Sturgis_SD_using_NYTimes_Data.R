@@ -161,7 +161,7 @@ g <-
   geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2) +
   
   # Add a forecast line based on linear regression
-  geom_line(aes(y = forecast_r), color = "firebrick2", size = 1.2, linetype = "dotted") +
+  #geom_line(aes(y = forecast_r), color = "firebrick2", size = 1.2, linetype = "dotted") +
 
   geom_hline(yintercept = 1, linetype = "dashed") + 
   
