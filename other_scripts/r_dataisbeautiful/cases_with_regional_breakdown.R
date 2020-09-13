@@ -152,7 +152,12 @@ state_map <-
 g_map_usa_regions_cases <-
   ggplot(data = state_map) +
   theme_void() + 
-  geom_sf(fill = state_map$color, color="black", size = 0.4, alpha = 0.8)
+  theme(legend.position = "none") +
+  geom_sf(aes(fill = region), color="black", size = 0.4, alpha = 0.8) + 
+  scale_fill_manual(values = c("region_1" = "#ffffcc",
+                               "region_2" = "#a1dab4",
+                               "region_3" = "#225ea8",
+                               "region_4" = "#41b6c4"))
 #print(g_map_usa_regions_cases)
 
 ################################################################################
@@ -204,7 +209,7 @@ subtitle <-
         " Total Cases (",
         round(10000 * total_cases / 327533795, 1),
         " per 10,000 people)\n",
-        "Growing at ", growing_at, " new cases/day\n",
+        "Average ", growing_at, " new cases/day last 7 days\n",
         up_rate_txt, " ", abs(up_rate), "% from 7 days ago",
         sep = "")
 
@@ -264,8 +269,8 @@ g_cases_stacked_per <-
 g_final_cases <-
   g_cases_stacked + 
   annotation_custom(ggplotGrob(g_cases_stacked_per), 
-                               xmin = as.Date(data %>% tail(n = 1) %>% pull("date")) - 45 - 60, 
-                               xmax = as.Date(data %>% tail(n = 1) %>% pull("date")) - 45, 
+                               xmin = as.Date(data %>% tail(n = 1) %>% pull("date")) - 75 - 60, 
+                               xmax = as.Date(data %>% tail(n = 1) %>% pull("date")) - 75, 
                                ymin = 67000,
                                ymax = 38000) +
   annotation_custom(ggplotGrob(g_map_usa_regions_cases), 
@@ -282,6 +287,6 @@ g_final_cases <-
 print(g_final_cases)
 
 
-#plot_grid(g_final_case s,
-#        g_final_deaths,
-#        nrow = 2, ncol = 1 , align = "hv")
+plot_grid(g_final_cases,
+        g_final_deaths,
+        nrow = 2, ncol = 1 , align = "hv")

@@ -106,7 +106,7 @@ if (!exists("data_loaded")) {
                                  "numeric", "numeric", "numeric", "numeric",
                                  "numeric", "numeric", "numeric", "numeric",
                                  "numeric", "numeric", "numeric", "numeric",
-                                 "numeric", "numeric")) %>%
+                                 "numeric", "numeric", "numeric", "numeric")) %>%
     mutate(DATE = as.Date(DATE))
 
   race_ethnicity_sex_df <-
@@ -323,10 +323,18 @@ new_deaths_tib <-
 
 total_recovered_tib <-
   county_new_df %>%
-  select(DATE, COUNTY, TOTAL_RECOVERED) %>%
+  #select(DATE, COUNTY, TOTAL_RECOVERED) %>%
+  select(DATE, COUNTY, TOTAL_RECOVERED, TOTAL_INACTIVE_RECOVERED) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-10")) %>%
+
+  # Patch to fix TN DoH Change on 9/3/20
+  replace(is.na(.), 0) %>%
+  group_by(Date, COUNTY) %>%
+  summarize(TOTAL_RECOVERED = TOTAL_RECOVERED + TOTAL_INACTIVE_RECOVERED) %>%
+  ungroup() %>%
+  
   #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
   arrange(Date, COUNTY) %>%
   pivot_wider(names_from = c("COUNTY"),
@@ -338,11 +346,18 @@ total_recovered_tib <-
 
 new_recovered_tib <-
   county_new_df %>%
-  select(DATE, COUNTY, NEW_RECOVERED) %>%
+  #select(DATE, COUNTY, NEW_RECOVERED) %>%
+  select(DATE, COUNTY, NEW_RECOVERED, NEW_INACTIVE_RECOVERED) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-04-10")) %>%
-  #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
+  
+  # Patch to fix TN DoH Change on 9/3/20
+  replace(is.na(.), 0) %>%
+  group_by(Date, COUNTY) %>%
+  summarize(NEW_RECOVERED = NEW_RECOVERED + NEW_INACTIVE_RECOVERED) %>%
+  ungroup() %>%
+  
   arrange(Date, COUNTY) %>%
   pivot_wider(names_from = c("COUNTY"),
               values_from = c("NEW_RECOVERED")) %>%
@@ -351,13 +366,13 @@ new_recovered_tib <-
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
+
 total_active_tib <-
   county_new_df %>%
   select(DATE, COUNTY, TOTAL_ACTIVE) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
   filter(Date >= as.Date("2020-03-31")) %>%
-  #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
   arrange(Date, COUNTY) %>%
   pivot_wider(names_from = c("COUNTY"),
               values_from = c("TOTAL_ACTIVE")) %>%
@@ -379,8 +394,8 @@ new_active_tib <-
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(peek_vars()))
-
+ select(Date, Total, sort(peek_vars()))
+    
 total_hospitalized_tib <-
   county_new_df %>%
   select(DATE, COUNTY, TOTAL_HOSPITALIZED) %>%

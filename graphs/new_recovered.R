@@ -21,11 +21,11 @@ graph_new_recover <- ggplot(data = recovered_data, aes(x = as.Date(date), y = ne
   geom_line(data = recovered_data, color = graph_color, size = line_thickness,
             aes(x = as.Date(date) - 3,
                 y = SMA(new_recovered, n = 7))) +
-  scale_y_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = scales::comma, limits = c(0, 3000)) +
 
   scale_x_date(#date_breaks = "3 days",
                date_labels = "%m/%d") +
   #  graph_log10_opts1 +
   #  graph_log10_opts2 +
   labs(title = newrec_title, x = "", y = "")
-#print(graph_new_recover)
+print(graph_new_recover)

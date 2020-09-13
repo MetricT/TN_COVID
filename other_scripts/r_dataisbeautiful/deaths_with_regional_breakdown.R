@@ -160,7 +160,12 @@ state_map <-
 g_map_usa_regions_deaths <-
   ggplot(data = state_map) +
   theme_void() + 
-  geom_sf(fill = state_map$color, color="black", size = 0.4, alpha = 0.8)
+  theme(legend.position = "none") +
+  geom_sf(aes(fill = region), color="black", size = 0.4, alpha = 0.8) + 
+  scale_fill_manual(values = c("region_1" = "#ffffcc",
+                               "region_2" = "#a1dab4",
+                               "region_3" = "#225ea8",
+                               "region_4" = "#41b6c4"))
 #print(g_map_usa_regions_deaths)
 
 ################################################################################
@@ -212,7 +217,7 @@ subtitle <-
         " Total Deaths (",
         round(10000 * total_deaths / 327533795, 1),
         " per 10,000 people)\n",
-        "Growing at ", growing_at, " new deaths/day\n",
+        "Average ", growing_at, " new deaths/day last 7 days\n",
         up_rate_txt," ", abs(up_rate), "% from 7 days ago",
         sep = "")
 

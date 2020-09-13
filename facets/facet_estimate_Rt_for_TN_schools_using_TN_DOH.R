@@ -18,7 +18,7 @@ my_location <-
     "Cheatham",   "Davidson",  "Wilson",
     "Dickson",    "Williamson", "Rutherford")
 
-my_location <- c("Cheatham")
+#my_location <- c("Cheatham")
 
 start_dates <- 
   tribble(

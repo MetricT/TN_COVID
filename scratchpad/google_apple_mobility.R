@@ -35,7 +35,10 @@ google_mobility <-
 ### state or county.
 ################################################################################
 my_state  <- c("Tennessee")
-my_county <- c("Cheatham County", "Davidson County", "Williamson County", "Dickson County", "Sevier County")
+my_county <- c("Montgomery County", "Robertson County", "Sumner County",
+               "Cheatham County",   "Davidson County",  "Wilson County",
+               "Dickson County",    "Williamson County", "Rutherford County")
+#  "Cheatham County", "Davidson County", "Williamson County", "Dickson County")
 
 ### Doing it this way so you can specify counties in multiple states and compare
 my_locations <- paste(my_county, ", ", my_state, sep = "")
@@ -68,6 +71,8 @@ apple_model <-
   as_tibble() %>%
   pivot_longer(-dates, names_to = c("type", "location"), names_sep = ":", values_to = "values") %>%
   pivot_wider(id_cols = c("dates", "location"), names_from = "type", values_from = "values")
+
+apple_model$location <- factor(apple_model$location, levels = paste(my_county, ", Tennessee", sep = ""))
 
 
 ### Create a facet map showing the data along with the trend for each location
@@ -114,6 +119,8 @@ google_tn <-
             ~ str_replace(., "trend_values", "trend")) %>%
   pivot_longer(-date, names_to = c("type", "location", "name"), names_sep = ":", values_to = "value") %>%
   pivot_wider(id_cols = c("date", "location", "name"), names_from = "type", values_from = "value")
+
+google_tn$location <- factor(google_tn$location, levels = paste(my_county, ", Tennessee", sep = ""))
   
 
 g_google <-

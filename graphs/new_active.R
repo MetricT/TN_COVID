@@ -32,8 +32,8 @@ graph_new_active <- ggplot(data = new_active_df, aes(x = as.Date(Date), y = new_
 
   scale_x_date(#date_breaks = "3 days",
     date_labels = "%m/%d") +
-  scale_y_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = scales::comma, limits = c(-1500, 2500)) +
   #  graph_log10_opts1 +
   #  graph_log10_opts2 +
   labs(title = newact_title, x = "", y = "")
-#print(graph_new_active)
+print(graph_new_active)

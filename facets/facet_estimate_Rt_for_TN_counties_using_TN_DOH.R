@@ -13,7 +13,7 @@ my_county <- c("Montgomery", "Robertson", "Sumner",
                "Cheatham",   "Davidson",  "Wilson",
                "Dickson",    "Williamson", "Rutherford")
 
-#my_county <- c("Cheatham")
+my_county <- c("Dickson")
 
 data <-
   county_new_df %>% 
@@ -128,4 +128,4 @@ print(g_rt_counties)
 
 plot_grid(g_rt_schools,
           g_rt_counties,
-          nrow = 2, ncol = 1, align = "hv")
+          nrow = 1, ncol = 2, align = "hv")

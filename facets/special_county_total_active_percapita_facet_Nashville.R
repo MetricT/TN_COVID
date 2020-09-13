@@ -34,7 +34,8 @@ total_active <-
   mutate(active_rate = 100 * value / POP2018) %>%
   rename(County = name) %>%
 #  select(Date, County, active_rate) %>%
-  filter(Date >= as.Date("2020-06-01"))
+  filter(Date >= as.Date("2020-06-01")) %>%
+  filter(Date <= as.Date("2020-09-01"))
 
 totact_title <- "Active COVID-19 Cases as % of County Population"
 #####\nwith dotted line showing date mask mandate for general public (if any) comes into effect"

@@ -35,7 +35,7 @@ deaths <-
   ### Comment out the line below to get graphs for all 50 states
   #filter(state %in% c("United States", "Tennessee")) %>%
   #filter(state %in% c("Tennessee")) %>%
-  #filter(state %in% c("United States")) %>%
+  filter(state %in% c("United States")) %>%
   
   mutate(thisyear = (year == 2020)) %>%
   group_by(state, year) %>%
