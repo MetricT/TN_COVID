@@ -9,11 +9,23 @@ library(EpiEstim)
 library(forecast)
 
 ### Choose the countys you want to add to the facet graph
-my_county <- c("Montgomery", "Robertson", "Sumner",
-               "Cheatham",   "Davidson",  "Wilson",
-               "Dickson",    "Williamson", "Rutherford")
 
-my_county <- c("Dickson")
+### If you want to do every county in the state
+my_county <- 
+  total_cases_tib %>% 
+  pivot_longer(-Date, names_to = "County", values_to = "Value") %>% 
+  select(County) %>% 
+  filter(!County %in% c("Total", "Pending", "Out of State")) %>% 
+  unique() %>% 
+  pull()
+
+#my_county <- c("Montgomery", "Robertson", "Sumner",
+#               "Cheatham",   "Davidson",  "Wilson",
+#               "Dickson",    "Williamson", "Rutherford")
+
+#my_county <- c("Montgomery", "Cheatham")
+
+my_county <- c("Cheatham")
 
 data <-
   county_new_df %>% 
@@ -24,8 +36,7 @@ data <-
   mutate(I = if_else(I < 0, 0, I)) %>%
   filter(dates >= as.Date("2020-06-01"))
 
-mask_mandates_df <-
-  read_csv("data/mandates.csv")
+mask_mandates_df <-  read_csv("data/mandates.csv")
 
 ### Serial Interval estimates from:
 ### https://wwwnc.cdc.gov/eid/article/26/6/20-0357_article
@@ -98,12 +109,31 @@ title <- "Estimate for Rt among the general population"
 subtitle <- paste("assuming mean(serial interval) = ", si_mean, 
                   " days and std(serial interval) = ", si_std, " days", sep = "")
 
-### Order counties in the order given in my_location at the top of the script
-Rt_tib$county <- factor(Rt_tib$county, levels = my_county)
+### Pick the top N worst counties
+last_date <-
+  Rt_tib %>% arrange(dates) %>% tail(n = 1) %>% pull(dates)
 
-Rt_tib <-
-  Rt_tib %>%
-  filter(dates >= as.Date("2020-07-26"))
+worst_counties <-
+  Rt_tib %>% 
+  filter(dates >= last_date - 3)  %>% 
+  select(county, mean_r) %>% 
+  group_by(county) %>% 
+  summarize(mean_r = mean(mean_r)) %>% 
+  ungroup() %>% 
+  arrange(desc(mean_r)) %>% 
+  head(n = 20) %>%
+  pull("county")
+
+Rt_tib <- Rt_tib %>% filter(county %in% worst_counties)
+
+### Order counties in the order given in my_location at the top of the script
+Rt_tib$county <- factor(Rt_tib$county, levels = worst_counties)
+
+#Rt_tib <-
+#  Rt_tib %>%
+#  filter(dates >= as.Date("2020-07-26"))
+
+#Rt_tib$county <- factor(Rt_tib$county, levels = my_county)
 
 ### Render the graph and done!
 g_rt_counties <-
@@ -115,17 +145,19 @@ g_rt_counties <-
                   ymax = mean_r + std_r),
               color = NA, fill = "darkgrey", alpha = 0.2) +
   
-  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2) +
+  geom_line(aes(y = trend), color = "firebrick4", size = 1.2) +
   
-  geom_vline(xintercept = as.Date("2020-07-19"), linetype = "dashed", color = "darkseagreen4") +
-  
-#  geom_vline(mapping = aes(xintercept = as.Date(effective_date)), linetype = "dashed", color = "darkred") + 
+  #geom_vline(xintercept = as.Date("2020-07-19"), linetype = "dashed", color = "darkseagreen4") +
+  #geom_vline(xintercept = as.Date("2020-07-21"), linetype = "dashed", color = "firebrick4") +
+  #geom_vline(mapping = aes(xintercept = as.Date(effective_date)), linetype = "dashed", color = "darkred") + 
   geom_hline(yintercept = 1, linetype = "dashed") + 
-  scale_y_continuous(limits = c(0.5, 2.0)) +
+  scale_y_continuous(limits = c(0, 2)) +
   facet_wrap(~ county) +
+  #facet_wrap(~ county, scales = "free_y") +
   labs(title = title, x = "", y = "Rt")
 print(g_rt_counties)
 
-plot_grid(g_rt_schools,
-          g_rt_counties,
+plot_grid(g_rt_counties,
+          g_rt_schools,
           nrow = 1, ncol = 2, align = "hv")
+

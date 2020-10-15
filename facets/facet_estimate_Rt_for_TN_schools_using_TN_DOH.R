@@ -13,12 +13,25 @@ invisible(lapply(packages, "library", quietly = TRUE,
 
 ### Choose the counties you want to add to the facet graph.  They will also graph
 ### in this order, so arrange them how you want.
+
+### If you want to do every county in the state
+my_location <- 
+  total_cases_tib %>% 
+  pivot_longer(-Date, names_to = "County", values_to = "Value") %>% 
+  select(County) %>% 
+  filter(!County %in% c("Total", "Pending", "Out of State")) %>% 
+  unique() %>% 
+  pull()
+
 my_location <- 
   c("Montgomery", "Robertson", "Sumner", 
     "Cheatham",   "Davidson",  "Wilson",
     "Dickson",    "Williamson", "Rutherford")
 
-#my_location <- c("Cheatham")
+#my_location <- c("Montgomery", "Cheatham")
+
+my_location <- c("Cheatham")
+
 
 start_dates <- 
   tribble(
@@ -98,16 +111,16 @@ data <-
          I        = NEW_CASES,
          location = COUNTY) %>%
   
-# Filter it to just the locations specified
-filter(location %in% my_location) %>%
+  # Filter it to just the locations specified
+  filter(location %in% my_location) %>%
   
-# Filter out cases wh#ere "I" is a NA
-filter(!is.na(I)) %>%
+  # Filter out cases wh#ere "I" is a NA
+  filter(!is.na(I)) %>%
 
-# Also, estimate_R can't handle negative numbers, so set negative values to 0.
-# These are usually due to suspected cases being lumped in and subsequently 
-# found to not be COVID.
-mutate(I = if_else(I < 0, 0, I))
+  # Also, estimate_R can't handle negative numbers, so set negative values to 0.
+  # These are usually due to suspected cases being lumped in and subsequently 
+  # found to not be COVID.
+  mutate(I = if_else(I < 0, 0, I))
 
 
 ################################################################################
@@ -206,6 +219,23 @@ subtitle <- paste("assuming mean(serial interval) = ", si_mean,
 ### Order counties in the order given in my_location at the top of the script
 Rt_tib$location <- factor(Rt_tib$location, levels = my_location)
 
+### Pick the top N worst counties
+last_date <-
+  Rt_tib %>% arrange(dates) %>% tail(n = 1) %>% pull(dates)
+
+worst_counties <-
+  Rt_tib %>% 
+  filter(dates >= last_date - 7)  %>% 
+  select(location, mean_r) %>% 
+  group_by(location) %>% 
+  summarize(mean_r = mean(mean_r)) %>% 
+  ungroup() %>% 
+  arrange(desc(mean_r)) %>% 
+  head(n = 20) %>%
+  pull("location")
+
+Rt_tib <- Rt_tib %>% filter(location %in% worst_counties)
+
 g_rt_schools <-
   ggplot(data = Rt_tib, aes(x = as.Date(dates))) +
   theme_linedraw() +
@@ -215,7 +245,7 @@ g_rt_schools <-
                   ymax = mean_r + std_r),
               color = NA, fill = "darkgrey", alpha = 0.2) +
   
-  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2) +
+  geom_line(aes(y = trend), color = "firebrick4", size = 1.2) +
   
   geom_hline(yintercept = 1, linetype = "dashed") + 
   

@@ -171,8 +171,6 @@ caption <-
 
 total_cases <- spreadsheet %>% filter(date == (spreadsheet %>% tail(n = 1) %>% pull("date"))) %>% pull("cases") %>% sum()
 
-#growing_at <- spreadsheet %>% select(date, cases) %>% group_by(date) %>% summarize(cases = sum(cases)) %>% tail(n = 2) %>% pull(cases) %>% diff()
-
 growing_at <- 
   spreadsheet %>% 
   select(date, cases) %>% 

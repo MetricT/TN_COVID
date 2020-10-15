@@ -19,23 +19,15 @@ library(fredr)
 ################################################################################
 ### Load the data...
 ################################################################################
-#google_mobility <-
-#  "../Datasets/ActiveConclusion/COVID19_mobility/google_reports/mobility_report_US.csv" %>%
-#  read_csv()
-
-google_mobility <-
-  "../Datasets/Global_Mobility_Report.csv" %>%
+google_mobility <- 
+  "https://raw.githubusercontent.com/ActiveConclusion/COVID19_mobility/master/google_reports/mobility_report_US.csv" %>%
   read_csv()
 
 google_us <-
   google_mobility %>% 
-  filter(country_region_code == "US") %>% 
-  rename(country = country_region, 
-         state = sub_region_1,
-         value = workplaces_percent_change_from_baseline) %>%
-  select(date, country, state, value) %>%
-  filter(is.na(state)) %>%
+  filter(state == "Total" & county == "Total") %>%
   mutate(name = "Google change in visits to workplace in US,\n% change from baseline") %>%
+  rename(value = workplaces) %>%
   select(date, name, value) %>%
   mutate(value = value %>% ts() %>% mstl(frequency = 7) %>% trendcycle())
 
@@ -59,7 +51,7 @@ g_us <-
   as_tibble() %>%
   mutate(date = as.Date(date) - 8) %>%
 #  mutate(name = "Google change in visits to workplace in US,\n% change from baseline") %>%
-  bind_rows(civpart)
+  bind_rows(unemploy_us)
 
 g_google_unemploy_us <-
   ggplot(data = g_us, aes(x = as.Date(date))) +

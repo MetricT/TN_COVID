@@ -33,7 +33,8 @@ new_cases_age <-
                          name == "61-70" ~ 65,
                          name == "71-80" ~ 75,
                          name == "81+"   ~ 85,
-    ))
+    )) 
+  
 
 new_cases_tib <-
   tibble(date = as.Date(character()),

@@ -26,7 +26,7 @@ county_pop <-
   filter(County %in% counties) %>%
   select(County, POP2018)
 
-total_active <-
+new_cases <-
   new_cases_tib %>%
   select("Date", counties) %>%
   pivot_longer(-Date) %>%
@@ -38,10 +38,11 @@ total_active <-
   filter(Date >= as.Date("2020-06-01")) %>%
   filter(Date <= as.Date("2020-09-01"))
 
-totact_title <- "Active COVID-19 Cases as % of County Population"
+totact_title <- "New COVID-19 Cases as % of County Population"
+#####\nwith dotted line showing date mask mandate for general public (if any) comes into effect"
 
 combined <-
-  total_active# %>%
+  new_cases# %>%
 #  full_join(forecast_1_per, by = c("Date" = "date"))
 
 
@@ -61,10 +62,8 @@ combined <-
 #  combined %>%
 #  mutate(County = paste(County, " Co., Tennessee", sep = ""))
 
-combined$County = factor(combined$County, levels = counties)
-
-graph_total_active_county_percapita <-
-  ggplot(data = combined, aes(x = as.Date(Date), y = active_rate / 100)) +
+graph_new_cases_county_percapita <-
+  ggplot(data = combined, aes(x = as.Date(Date) - 7, y = SMA(active_rate / 100, n = 15))) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x = element_text(vjust = 0.7)) +
@@ -75,8 +74,8 @@ graph_total_active_county_percapita <-
   theme(strip.background = element_rect(fill = "black"))+
   theme(legend.position = "none") +
   
-  geom_vline(mapping = aes(xintercept = as.Date(effective_date)), linetype = "dotted") + 
-  #geom_vline(xintercept = as.Date("2020-07-19"), linetype = "dashed") + 
+  #geom_vline(mapping = aes(xintercept = as.Date(effective_date)), linetype = "dotted") + 
+  geom_vline(xintercept = as.Date("2020-07-19"), linetype = "dashed") + 
   
   
   geom_line(color = graph_color, size = line_thickness) +
@@ -84,6 +83,6 @@ graph_total_active_county_percapita <-
   facet_wrap(~ County) +#, grid = my_grid) +
 
   scale_x_date(date_labels = "%m/%d") +
-  scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
+  scale_y_continuous(labels = scales::percent) + #, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
   labs(title = totact_title, x = "", y = "")
-print(graph_total_active_county_percapita)
+print(graph_new_cases_county_percapita)

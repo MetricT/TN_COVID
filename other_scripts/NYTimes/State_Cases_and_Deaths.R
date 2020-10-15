@@ -7,10 +7,10 @@ library(useful)
 my_state <- "Tennessee"
 
 ### How much do we scale up deaths to make it visually similar in size to cases
-scale <- 110
+scale <- 60
 
 ### What is the lag in days between cases and deaths
-lag_st <- 8
+lag_st <- 22
 
 # Download this Github repo and add the path to the spreadsheet
 # https://github.com/nytimes/covid-19-data
