@@ -162,6 +162,24 @@ g_excess_deaths <-
   scale_y_continuous(labels = scales::percent)
 print(g_excess_deaths)
 
+
+g_excess_deaths <-
+  ggplot(data = excess_deaths %>% filter(year == 2020), aes(x = week, y = excess)) +
+  theme_bw() +
+  geom_hline(yintercept = 0, col = "gray") +
+  geom_area(fill = "orange", color = "black")  +
+  geom_vline(xintercept = week(Sys.Date()), linetype = "dotted", color = "darkred") + 
+  facet_wrap(~ state) + #, scales = "free_y") +
+  scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
+  guides(col = FALSE) +
+  ggtitle("Excess deaths") +
+  labs(x = "Week", y = "") +
+  scale_y_continuous(labels = scales::percent)
+print(g_excess_deaths)
+
+
+
+
 ### Summarize excess deaths
 excess_deaths %>%
   filter(year == 2020) %>%
