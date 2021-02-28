@@ -5,6 +5,8 @@ library(tidyr)
 library(ggplot2)
 library(janitor)
 library(cowplot)
+library(lubridate)
+library(tidycensus)
 
 ### Data on finalized (2014-2018) and provisional (2019-2020) all-causes death counts
 finalized_ss   <- readr::read_csv("https://data.cdc.gov/api/views/3yf8-kanr/rows.csv?accessType=DOWNLOAD")
@@ -34,7 +36,7 @@ deaths <-
   
   ### Comment out the line below to get graphs for all 50 states
   #filter(state %in% c("United States", "Tennessee")) %>%
-  filter(state %in% c("United States", "Tennessee", "Kentucky", "North Carolina", "Georgia", "Alabama", "Mississipi", "Arkansas")) %>%
+  #filter(state %in% c("United States", "Tennessee", "Kentucky", "North Carolina", "Georgia", "Alabama", "Mississipi", "Arkansas")) %>%
   #filter(state %in% c("Tennessee")) %>%
   #filter(state %in% c("United States")) %>%
   
@@ -52,7 +54,13 @@ deaths <-
   ###  incompleteness changes slightly every week. "
   ###
   ### https://www.mortality.org/Public/STMF_DOC/STMFmetadata.pdf
-  filter(!(year == 2020 & week %in% seq(max(week) - 2, max(week))))
+  filter(!(year == 2020 & week %in% seq(max(week) - 2, max(week)))) #%>%
+  
+  ### West Virginia and North Carolina are especially slow about reporting mortality
+  ### numbers, so knock off an additional two weeks for those states
+
+  ### Add this when you have time
+  
 
 ### Recombine NY & NYC
 deaths_non_ny <-
@@ -133,11 +141,15 @@ excess_deaths <-
   left_join(pop, by = "state") %>% 
   mutate(excess = excess / POP2018)
 
+excess_deaths_2020 <-
+  excess_deaths %>%
+  filter(year == 2020) %>%
+#  filter(week %in% c(37, 36))
+  filter(week > 25)
 
 ### Order graphs by the state seeing the worst impact
 us_order <- 
-  excess_deaths %>% 
-  filter(year == 2020) %>% 
+  excess_deaths_2020 %>% 
   ungroup() %>% 
   select(state, excess) %>% 
   group_by(state) %>%
@@ -162,9 +174,8 @@ g_excess_deaths <-
   scale_y_continuous(labels = scales::percent)
 print(g_excess_deaths)
 
-
 g_excess_deaths <-
-  ggplot(data = excess_deaths %>% filter(year == 2020), aes(x = week, y = excess)) +
+  ggplot(data = excess_deaths %>% filter(year == 2020 & week > 1), aes(x = week, y = excess)) +
   theme_bw() +
   geom_hline(yintercept = 0, col = "gray") +
   geom_area(fill = "orange", color = "black")  +
@@ -172,13 +183,11 @@ g_excess_deaths <-
   facet_wrap(~ state) + #, scales = "free_y") +
   scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
   guides(col = FALSE) +
-  ggtitle("Excess deaths") +
+  ggtitle("Excess deaths by week as % of population") +
+  labs(subtitle = "Vertical dotted line represents current week.  Mortality data lags ~1 month") +
   labs(x = "Week", y = "") +
-  scale_y_continuous(labels = scales::percent)
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.0001))
 print(g_excess_deaths)
-
-
-
 
 ### Summarize excess deaths
 excess_deaths %>%

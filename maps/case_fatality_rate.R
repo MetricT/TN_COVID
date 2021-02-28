@@ -44,7 +44,7 @@ avg_cfr = (100 * (counties$total_deaths %>% na.omit() %>% sum()) /
 counties$case_fatality_rate[is.nan(counties$case_fatality_rate)] <- 0
 cfr_title <- paste("Case Fatality Rate (State Avg = ", avg_cfr, "%)", sep = "")
 
-case_fatality_rate_label <- 100*round(counties$case_fatality_rate, 3)
+case_fatality_rate_label <- 100*round(counties$case_fatality_rate, 4)
 case_fatality_rate_label[case_fatality_rate_label == 0 & counties$total_cases != 0] <- ""
 
 ### By default use black for the font, but if the value is over 1/2's of the way
@@ -67,4 +67,4 @@ map_case_fatality_rate <- ggplot(counties) +
             nudge_y = counties$nudge_y) +
   labs(title = cfr_title) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-#print(map_case_fatality_rate)
+print(map_case_fatality_rate)

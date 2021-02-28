@@ -11,6 +11,12 @@ ntpd_df <-
             total_neg_tests = sum(NEG_TESTS)) %>%
   mutate(new_pos_tests = total_pos_tests - lag(total_pos_tests)) %>%
   mutate(new_neg_tests = total_neg_tests - lag(total_neg_tests)) %>%
+
+  # Correct (as best as possible) the date when TN DoH undercounted negative tests by averaging
+  # with the higher-than-normal negative tests the next day
+  mutate(new_neg_tests = if_else(as.Date(DATE) == "2020-12-12", 39062, new_neg_tests)) %>%
+  mutate(new_neg_tests = if_else(as.Date(DATE) == "2020-12-13", 39062, new_neg_tests)) %>%
+
   mutate(Positive_Rate = new_pos_tests / (new_pos_tests + new_neg_tests)) %>%
   rename(Date = DATE) %>%
   mutate(Date = as.Date(Date))
@@ -34,6 +40,10 @@ SMA         <- (ntpd_df %>% arrange(Date) %>% tail(n = 1) %>% pull("trend") * 10
 
 posrate_title <- paste("Positive New Test Rate: ", new_pos_num, "%, SMA: ", SMA, "%", sep = "")
 
+### Hack to filter out one erroneously high data point while I try to figure out how to handle it
+#ul <- ntpd_df %>% select(Positive_Rate) %>% filter(Positive_Rate <= 0.5087394) %>% filter(!is.na(Positive_Rate)) %>% max()
+
+
 graph_new_positive_test_rate <-
   ggplot(data = ntpd_df, aes(x = as.Date(Date), y = D_TN)) +
   theme_classic() +
@@ -49,7 +59,7 @@ graph_new_positive_test_rate <-
             aes(x = as.Date(Date), y = trend)) +
 
   scale_x_date(date_labels = "%m/%d") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0.025, 0.125)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + #, limits = c(0, ul + 0.01)) +
   labs(title = posrate_title, x = "", y = "")
 
-#print(graph_new_positive_test_rate)
+print(graph_new_positive_test_rate)

@@ -9,6 +9,18 @@ if (length(new_packages)) install.packages(new_packages, quiet = TRUE)
 invisible(lapply(packages, "library", quietly = TRUE,
                  character.only = TRUE, warn.conflicts = FALSE))
 
+
+### Load COVID data from Google Sheets
+library("googlesheets4")
+gs4_deauth()
+vandy_covid_data_url <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRgMqMAGHvc1hDZjiBn5NnT11v5MPLkukIGsvuXeSVKHKHIGZ_DgnInuh9Pa2OlCORp0ejxRJpfECY2/pubhtml?gid=153995963"
+vandy_covid_data <- read_sheet(vandy_covid_data_url)
+
+
+
+
+
+
 ### Scrape data off the Vandy COVID-19 dashboard
 # https://www.vanderbilt.edu/coronavirus/covid19dashboard
 

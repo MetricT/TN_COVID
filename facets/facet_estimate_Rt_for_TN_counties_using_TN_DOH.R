@@ -19,9 +19,9 @@ my_county <-
   unique() %>% 
   pull()
 
-#my_county <- c("Montgomery", "Robertson", "Sumner",
-#               "Cheatham",   "Davidson",  "Wilson",
-#               "Dickson",    "Williamson", "Rutherford")
+my_county <- c("Montgomery", "Robertson", "Sumner",
+               "Cheatham",   "Davidson",  "Wilson",
+               "Dickson",    "Williamson", "Rutherford")
 
 #my_county <- c("Montgomery", "Cheatham")
 
@@ -30,6 +30,7 @@ my_county <- c("Cheatham")
 data <-
   county_new_df %>% 
   select(DATE, COUNTY, NEW_CASES) %>% 
+  filter(DATE >= as.Date("2020-10-01")) %>%
   filter(COUNTY %in% my_county) %>%
   filter(!is.na(NEW_CASES)) %>%
   rename(dates = DATE, county = COUNTY, I = NEW_CASES) %>%
@@ -133,7 +134,7 @@ Rt_tib$county <- factor(Rt_tib$county, levels = worst_counties)
 #  Rt_tib %>%
 #  filter(dates >= as.Date("2020-07-26"))
 
-#Rt_tib$county <- factor(Rt_tib$county, levels = my_county)
+Rt_tib$county <- factor(Rt_tib$county, levels = my_county)
 
 ### Render the graph and done!
 g_rt_counties <-

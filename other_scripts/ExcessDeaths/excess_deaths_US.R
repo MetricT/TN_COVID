@@ -5,6 +5,7 @@ library(tidyr)
 library(ggplot2)
 library(janitor)
 library(cowplot)
+library(lubridate)
 
 ### Data on finalized (2014-2018) and provisional (2019-2020) all-causes death counts
 finalized_ss   <- readr::read_csv("https://data.cdc.gov/api/views/3yf8-kanr/rows.csv?accessType=DOWNLOAD")
@@ -34,9 +35,9 @@ deaths <-
   
   ### Comment out the line below to get graphs for all 50 states
   #filter(state %in% c("United States", "Tennessee")) %>%
-  filter(state %in% c("United States", "Tennessee", "Kentucky", "North Carolina", "Georgia", "Alabama", "Mississipi", "Arkansas")) %>%
+  #filter(state %in% c("United States", "Tennessee", "Kentucky", "North Carolina", "Georgia", "Alabama", "Mississipi", "Arkansas")) %>%
   #filter(state %in% c("Tennessee")) %>%
-  #filter(state %in% c("United States")) %>%
+  filter(state %in% c("United States")) %>%
   
   mutate(thisyear = (year == 2020)) %>%
   group_by(state, year) %>%
@@ -79,6 +80,7 @@ g_weekly_deaths <-
   geom_line(aes(col = thisyear)) +
   facet_wrap(~ state, scales = "free_y") +
   scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
+  geom_vline(xintercept = week(Sys.Date()), linetype = "dotted", color = "darkred") + 
   guides(col = FALSE) +
   ggtitle("Weekly deaths") +
   labs(x = "Week", y = "") +
@@ -128,24 +130,24 @@ pop <-
 # New York City - 8,399,000
 # New York State - 11,051,000
 
-excess_deaths <-
-  excess_deaths %>% 
-  left_join(pop, by = "state") %>% 
-  mutate(excess = excess / POP2018)
+#excess_deaths <-
+#  excess_deaths %>% 
+#  left_join(pop, by = "state") %>% 
+#  mutate(excess = excess / POP2018)
 
 
 ### Order graphs by the state seeing the worst impact
-us_order <- 
-  excess_deaths %>% 
-  filter(year == 2020) %>% 
-  ungroup() %>% 
-  select(state, excess) %>% 
-  group_by(state) %>%
-  summarize(max = max(excess)) %>%
-  arrange(desc(max)) %>% 
-  pull(state)
+#us_order <- 
+#  excess_deaths %>% 
+#  filter(year == 2020) %>% 
+#  ungroup() %>% 
+#  select(state, excess) %>% 
+#  group_by(state) %>%
+#  summarize(max = max(excess)) %>%
+#  arrange(desc(max)) %>% 
+#  pull(state)
 
-excess_deaths$state <- factor(excess_deaths$state, levels = us_order)
+#excess_deaths$state <- factor(excess_deaths$state, levels = us_order)
 
 ### Create a graph of weekly excess deaths by state
 g_excess_deaths <-
@@ -153,6 +155,7 @@ g_excess_deaths <-
   theme_bw() +
   geom_hline(yintercept = 0, col = "gray") +
   geom_line(aes(col = thisyear)) +
+  geom_vline(xintercept = week(Sys.Date()), linetype = "dotted", color = "darkred") + 
   geom_vline(xintercept = week(Sys.Date()), linetype = "dotted", color = "darkred") + 
   facet_wrap(~ state) + #, scales = "free_y") +
   scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +

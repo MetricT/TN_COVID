@@ -23,10 +23,7 @@ my_location <-
   unique() %>% 
   pull()
 
-my_location <- 
-  c("Montgomery", "Robertson", "Sumner", 
-    "Cheatham",   "Davidson",  "Wilson",
-    "Dickson",    "Williamson", "Rutherford")
+my_location <- c("Montgomery", "Robertson", "Sumner", "Cheatham",   "Davidson",  "Wilson",  "Dickson",    "Williamson", "Rutherford")
 
 #my_location <- c("Montgomery", "Cheatham")
 
@@ -107,6 +104,7 @@ data <-
   read_excel_url() %>%
   mutate(DATE = as.Date(DATE)) %>%
   select(DATE, NEW_CASES, COUNTY) %>%
+  filter(DATE >= as.Date("2020-10-01")) %>%
   rename(dates    = DATE,
          I        = NEW_CASES,
          location = COUNTY) %>%

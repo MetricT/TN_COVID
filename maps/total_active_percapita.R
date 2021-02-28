@@ -46,4 +46,5 @@ map_total_active_percapita <-
   labs(title = paste("Total active cases as % of population: ", num, "%", sep = "")) +
   #labs(title = paste("Total Active per ", scale_txt, ": ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette[map_palette != "#7f7f7f"], trans = "pseudo_log")
-#print(map_total_active_percapita)
+print(map_total_active_percapita)
+

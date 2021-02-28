@@ -57,4 +57,4 @@ map_new_deaths_last7 <-
             nudge_y = counties$nudge_y) +
   labs(title = paste("New Deaths Last 7 Days: ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-#print(map_new_deaths_last7)
+print(map_new_deaths_last7)

@@ -5,8 +5,8 @@
 ### https://www.tn.gov/health/cedep/ncov/data/maps.html
 ################################################################################
 
-case_data_from <- as.Date("2020-08-01")
-lab_data_from  <- as.Date("2020-07-30")
+case_data_from <- as.Date("2020-10-03")
+lab_data_from  <- as.Date("2020-10-01")
 
 ### Pluck out info about new cases over the last 7 days   Doing it this way
 ### instead of using the new_cases_tib directly because some of the new_cases
@@ -52,7 +52,7 @@ neg_count <-
 positivity_results <-
   pos_count %>%
   left_join(neg_count, by = "COUNTY") %>%
-  mutate(positivity = round(TOT_POS_TESTS / (TOT_POS_TESTS + TOT_NEG_TESTS), 2)) %>%
+  mutate(positivity = round(TOT_POS_TESTS / (TOT_POS_TESTS + TOT_NEG_TESTS), 3)) %>%
   rename(county = COUNTY) %>%
   select(county, positivity)
 
@@ -85,10 +85,13 @@ combined <-
   # 'Red Zone.'"
     
   mutate(level_pop = case_when(
-    new_cases_percapita >= 100   ~ "RED",
+    new_cases_percapita >  100   ~ "RED",
+    
+    new_cases_percapita >  50 &
+    new_cases_percapita <= 100   ~ "ORANGE",
     
     new_cases_percapita >= 10  &
-    new_cases_percapita  < 100   ~ "YELLOW",
+    new_cases_percapita <= 50   ~ "YELLOW",
     
     new_cases_percapita <  10    ~ "WHITE",  
 
@@ -98,16 +101,31 @@ combined <-
     positivity <  5    ~ "WHITE",
       
     positivity >=  5 &
-    positivity <  10   ~ "YELLOW",
+    positivity <   8   ~ "YELLOW",
+    
+    positivity >= 8 &
+    positivity <= 10   ~ "ORANGE",
       
-    positivity >= 10   ~ "RED",
+    positivity >  10   ~ "RED",
   )) %>%
 
   mutate(level = case_when(
     level_pop == "RED"    & level_pos == "RED"    ~ "RED",
+    
+    level_pop == "ORANGE" &
+      level_pos %in% c("ORANGE", "RED")           ~ "ORANGE",
+    
+    level_pos == "ORANGE" &
+      level_pop %in% c("ORANGE", "RED")           ~ "ORANGE",
+    
     level_pop == "YELLOW" & level_pos == "YELLOW" ~ "YELLOW",
-    level_pop == "RED"    & level_pos == "YELLOW" ~ "YELLOW",
-    level_pop == "YELLOW" & level_pos == "RED"    ~ "YELLOW",
+    
+    level_pop == "YELLOW" & 
+      level_pos %in% c("YELLOW", "ORANGE", "RED") ~ "YELLOW",
+    
+    level_pos == "YELLOW" & 
+      level_pop %in% c("YELLOW", "ORANGE", "RED") ~ "YELLOW",
+    
     TRUE                                          ~ "WHITE"
   )) 
   
@@ -129,7 +147,7 @@ this_map <-
 
 this_map$color_level <-
   factor(this_map$color_level,
-         levels = c("WHITE", "YELLOW", "RED"))
+         levels = c("WHITE", "YELLOW", "ORANGE", "RED"))
 
 map_title <- "White House Task Force Map"
 
@@ -157,8 +175,10 @@ map_white_house <-
   # Set the color scale manually
   scale_fill_manual(values = 
                       c("RED"     = "firebrick2",
+                        "ORANGE"  = "orange",
                         "YELLOW"  = "goldenrod2",
                         "WHITE"   = "white")) +
   
   labs(title = map_title, subtitle = map_subtitle)
 print(map_white_house)
+

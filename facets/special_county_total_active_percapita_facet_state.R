@@ -26,7 +26,7 @@ total_active <-
   mutate(active_rate = 100 * value / POP2018) %>%
   rename(County = name) %>%
   select(Date, County, active_rate) %>%
-  filter(Date >= as.Date("2020-06-01"))
+  filter(Date >= as.Date("2020-09-07"))
 
 totact_title <- "Active COVID-19 Cases as % of County Population"
 
@@ -49,6 +49,6 @@ graph_total_active_county_percapita <-
   facet_geo(~ County, grid = "us_tn_counties_grid1") +
 
   scale_x_date(date_labels = "%m/%d") +
-  scale_y_continuous(labels = scales::percent, breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.015), breaks = c(0.000, 0.002, 0.004, 0.006, 0.008, 0.010, 0.012, 0.014)) +
   labs(title = totact_title, x = "", y = "")
 print(graph_total_active_county_percapita)

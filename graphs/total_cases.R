@@ -31,4 +31,4 @@ graph_total_cases <- ggplot(data = cases_data) +
   graph_log10_opts1 +
   graph_log10_opts2 +
   labs(title = paste("Total Cases: ", total_num, sep = ""), x = "", y = "")
-#print(graph_total_cases)
+print(graph_total_cases)

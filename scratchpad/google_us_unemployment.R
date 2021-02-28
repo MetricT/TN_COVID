@@ -25,7 +25,9 @@ google_mobility <-
 
 google_us <-
   google_mobility %>% 
-  filter(state == "Total" & county == "Total") %>%
+  filter(state == "Tennessee" & county == "Total") %>%
+  #filter(state == "Tennessee" & county == "Cheatham County") %>%
+  #filter(state == "Total" & county == "Total") %>%
   mutate(name = "Google change in visits to workplace in US,\n% change from baseline") %>%
   rename(value = workplaces) %>%
   select(date, name, value) %>%
@@ -50,21 +52,26 @@ g_us <-
   google_us %>% 
   as_tibble() %>%
   mutate(date = as.Date(date) - 8) %>%
-#  mutate(name = "Google change in visits to workplace in US,\n% change from baseline") %>%
-  bind_rows(unemploy_us)
+  mutate(name = "Google change in visits to workplace in US,\n% change from baseline") %>%
+  bind_rows(unemploy_us) %>%
+  bind_rows(civpart)
 
 g_google_unemploy_us <-
   ggplot(data = g_us, aes(x = as.Date(date))) +
   theme_linedraw() +
   theme(strip.text = element_text(size = 20)) + 
   geom_line(aes(y = value), color = "darkseagreen4", size = 1.0) +
-  geom_vline(xintercept = as.Date("2020-02-01"), linetype = "dotted") +
-  geom_vline(xintercept = as.Date("2020-03-01"), linetype = "dotted") +
-  geom_vline(xintercept = as.Date("2020-04-01"), linetype = "dotted") +
-  geom_vline(xintercept = as.Date("2020-05-01"), linetype = "dotted") +
-  geom_vline(xintercept = as.Date("2020-06-01"), linetype = "dotted") +
-  geom_vline(xintercept = as.Date("2020-07-01"), linetype = "dotted") +
-  geom_vline(xintercept = as.Date("2020-08-01"), linetype = "dotted") +
+  scale_x_date(breaks = "1 month") + 
+#  geom_vline(xintercept = as.Date("2020-02-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-03-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-04-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-05-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-06-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-07-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-08-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-09-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-10-01"), linetype = "dotted") +
+#  geom_vline(xintercept = as.Date("2020-11-01"), linetype = "dotted") +
   facet_wrap(~ name, scales = "free_y") +
   labs(x = "Date")
 print(g_google_unemploy_us)

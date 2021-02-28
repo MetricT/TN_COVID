@@ -8,6 +8,10 @@ SMA <- recovered_data$new_recovered %>% SMA(n = 7) %>% tail(n = 1) %>% round() %
 
 newrec_title <- paste("New Recovered: ", new_rec_num, ", SMA: ", SMA, sep = "")
 
+recovered_data <-
+  recovered_data %>%
+  mutate(new_recovered = if_else(new_recovered == 20893, 0, new_recovered))
+
 graph_new_recover <- ggplot(data = recovered_data, aes(x = as.Date(date), y = new_recovered)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -21,7 +25,7 @@ graph_new_recover <- ggplot(data = recovered_data, aes(x = as.Date(date), y = ne
   geom_line(data = recovered_data, color = graph_color, size = line_thickness,
             aes(x = as.Date(date) - 3,
                 y = SMA(new_recovered, n = 7))) +
-  scale_y_continuous(labels = scales::comma, limits = c(0, 3000)) +
+  scale_y_continuous(labels = scales::comma) + 
 
   scale_x_date(#date_breaks = "3 days",
                date_labels = "%m/%d") +

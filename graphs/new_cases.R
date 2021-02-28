@@ -32,4 +32,4 @@ graph_new_cases <- ggplot(data = cases_data) +
   graph_log10_opts1 +
   graph_log10_opts2 +
   labs(title = newinf_title, x = "", y = "")
-#print(graph_new_cases)
+print(graph_new_cases)

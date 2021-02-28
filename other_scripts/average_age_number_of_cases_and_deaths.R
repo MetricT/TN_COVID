@@ -236,6 +236,6 @@ g_cases_and_deaths_facet <-
 
   facet_wrap(~ descr, scales = "free_y") +
   
-  labs(title = "Average Age of TN New Cases and New Deaths", x = "Date", y = "Average Age")
+  labs(title = "Average Age of TN New Cases and New Deaths", x = "Date", y = "")
 
 print(g_cases_and_deaths_facet)

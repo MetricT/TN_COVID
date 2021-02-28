@@ -27,7 +27,7 @@ county_pop <-
   select(County, POP2018)
 
 total_active <-
-  new_cases_tib %>%
+  total_active_tib %>%
   select("Date", counties) %>%
   pivot_longer(-Date) %>%
   left_join(county_pop, by = c("name" = "County")) %>%
@@ -35,8 +35,8 @@ total_active <-
   mutate(active_rate = 100 * value / POP2018) %>%
   rename(County = name) %>%
 #  select(Date, County, active_rate) %>%
-  filter(Date >= as.Date("2020-06-01")) %>%
-  filter(Date <= as.Date("2020-09-01"))
+  filter(Date >= as.Date("2020-06-01")) #%>%
+  #filter(Date <= as.Date("2020-09-01"))
 
 totact_title <- "Active COVID-19 Cases as % of County Population"
 

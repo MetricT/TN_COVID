@@ -18,6 +18,7 @@ library(politicaldata)
 spreadsheet <- 
   "../Datasets/nytimes/covid-19-data/us-counties.csv" %>%
   read_csv(col_names = TRUE, col_types = "Dcccdd") %>%
+  filter(fips != "15005") %>% # Filter fips 15005 (Kalawao County Hawaii) since it no longer exists
   mutate(state_fips = substr(fips, 1, 2)) %>%
   filter(!state_fips %in% c(69, 72, 78)) %>%
   filter(!is.na(state_fips)) %>%
@@ -126,7 +127,8 @@ data <-
   rename_at(vars(starts_with("sma_")), ~ str_replace(., "sma_", "")) %>%
   filter(date >= as.Date("2020-03-01")) %>%
   pivot_longer(-date, names_to = "subtype", values_to = "values") %>%
-  mutate_if(is.numeric, ~ (replace_na(., 0))) 
+  mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
+  filter(!is.na(subtype))
 
 ################################################################################
 ### Draw the inset "Regional Curves" graph
@@ -287,19 +289,20 @@ print(g_deaths_stacked_per)
 g_final_deaths <-
   g_deaths_stacked + 
   annotation_custom(ggplotGrob(g_deaths_stacked_per), 
-                    xmin = as.Date(data %>% tail(n = 1) %>% pull("date")) -70 - 60, 
-                    xmax = as.Date(data %>% tail(n = 1) %>% pull("date")) -70, 
-                    ymin = 1000,
-                    ymax = 1800) +
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 170, 
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 170 + 70, 
+                    ymin = 1200,
+                    ymax = 2200) +
   annotation_custom(ggplotGrob(g_map_usa_regions_deaths), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 5,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 5 + 45, 
-                    ymin = 1100,
-                    ymax = 1800) + 
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 80,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 80 + 85, 
+                    ymin = 1300,
+                    ymax = 2300) + 
   
   annotation_custom(ggplotGrob(g_regional_curves_deaths), 
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 10,
                     xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 10 + 33, 
-                    ymin = 100,
-                    ymax = 1050)
+                    ymin = 2200,
+                    ymax = 150)
 print(g_final_deaths)
+

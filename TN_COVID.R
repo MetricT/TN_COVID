@@ -87,7 +87,7 @@ if (!exists("data_loaded")) {
   ###        yet.   Test the data, and die if it's yesterday's data.   Obviously
   ###        comment this out if you *want* yesterday's data
   data_date <- age_ss_df  %>% select(DATE) %>% arrange(DATE) %>% tail(n = 1) %>% pull()
-  if (data_date < Sys.Date() & (Sys.time() %>% hour()) >= 14) {
+  if (data_date < Sys.Date() & (Sys.time() %>% hour()) >= 17) {
     stop("TN Spreadsheets haven't been updated with today's data yet.  Last data from ", data_date, ". Exiting...")
   }
 
@@ -106,16 +106,16 @@ if (!exists("data_loaded")) {
                                  "numeric", "numeric", "numeric", "numeric",
                                  "numeric", "numeric", "numeric", "numeric",
                                  "numeric", "numeric", "numeric", "numeric",
-                                 "numeric", "numeric", "numeric", "numeric")) %>%
+                                 "numeric", "numeric", "numeric", "numeric", "numeric")) %>%
     mutate(DATE = as.Date(DATE))
 
   race_ethnicity_sex_df <-
     read_excel_url(race_ethnicity_sex_url) %>%
     mutate(Date = as.Date(Date))
 
-  county_school_df <-
-    read_excel_url(county_school_url) %>%
-    mutate(DATE = as.Date(DATE))
+  #county_school_df <-
+  #  read_excel_url(county_school_url)%>%
+  #  mutate(DATE = as.Date(DATE))
   
   mmwr_df <-
     read_excel_url(mmwr_url) %>%
@@ -365,7 +365,6 @@ new_recovered_tib <-
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
-
 
 total_active_tib <-
   county_new_df %>%
@@ -687,7 +686,7 @@ counties$nudge_y[counties$County == "Moore"]     <-  0.015
 #source("maps/new_active_percapita_last7.R")   # New active per capita last 7
 #source("maps/new_cases_percapita_last7.R")    # New cases per capita last 7
 #source("maps/new_deaths_percapita.R")         # New deaths per capita
-#source("maps/total_active_percapita_last7.R") # Total active per capita last 7
+source("maps/total_active_percapita_last7.R") # Total active per capita last 7
 #source("maps/total_recovered_percapita.R")    # Total recoverd per capita last 7
 #source("maps/total_cases.R")                  # Total confirmed cases
 #source("maps/total_deaths.R")                 # Total deaths
@@ -726,7 +725,6 @@ source("graphs/new_hospitalized.R")          # New hospitalized
 source("graphs/new_tests_perday.R")          # New tests per day
 source("graphs/new_positive_test_rate.R")    # Positive test rate
 
-
 ################################################################################
 ### Arrange the graphs into the final infographic
 ################################################################################
@@ -747,14 +745,27 @@ footer_string <- paste("SMA = 7-day Simple Moving Average\n",
 grob_charts <-
  plot_grid(graph_new_positive_test_rate, graph_new_tests_perday,  graph_new_hospital,  graph_age_cases,    graph_age_deaths,
            graph_new_cases,              graph_new_deaths,        graph_new_active,    graph_total_active, graph_new_recover,
-           ncol = 5, nrow = 2, align = "hv")
+          ncol = 5, nrow = 2, align = "hv")
+
+#source("graphs/special_image.R")             # Special images
+#grob_charts <-
+#  plot_grid(graph_new_positive_test_rate, graph_new_tests_perday,  graph_new_hospital,  graph_age_cases,    graph_age_deaths,
+#            graph_new_cases,              graph_new_deaths,        graph_special_image,    graph_total_active, graph_new_recover,
+#            ncol = 5, nrow = 2, align = "hv")
+
 
 grob_maps <-
- plot_grid(map_new_recovered_last7, map_new_cases,
-           map_new_deaths_last7,    map_total_active_percapita,
-           map_new_active_last7,    map_total_deaths_percapita,
+ plot_grid(map_new_deaths_last7,    map_new_cases,
+           map_new_active_last7,    map_total_active_percapita,
+           map_total_active_percapita_last7 ,  map_total_deaths_percapita,
            ncol = 2, nrow = 3, align = "hv")
    
+#grob_maps <-
+#  plot_grid(map_new_recovered_last7, map_new_cases,
+#            map_new_deaths_last7,    map_total_active_percapita,
+#            map_new_active_last7,    map_total_deaths_percapita,
+#            ncol = 2, nrow = 3, align = "hv")
+
 charts <- plot_grid(grob_maps,
                     grob_charts,
                     ncol = 1, nrow = 2,

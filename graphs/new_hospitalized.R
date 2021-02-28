@@ -31,4 +31,4 @@ graph_new_hospital <-
   scale_x_date(#date_breaks = "3 days",
     date_labels = "%m/%d") +
   labs(title = newhos_title, x = "", y = "")
-#print(graph_new_hospital)
+print(graph_new_hospital)

@@ -281,18 +281,18 @@ g_final_deaths <-
   annotation_custom(ggplotGrob(g_deaths_stacked_per), 
                                xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 10, 
                                xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 10 + 65, 
-                               ymin = 24,
+                               ymin = 30,
                                ymax = 10) +
   annotation_custom(ggplotGrob(g_map_tn_regions_deaths), 
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 10,
                     xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 10 + 65, 
-                    ymin = 24,
-                    ymax = 34) + 
+                    ymin = 30,
+                    ymax = 40) + 
 
   annotation_custom(ggplotGrob(g_regional_curves_deaths), 
                   xmin = as.Date(data %>% head(n = 1) %>% pull("date"))  + 77,
                   xmax = as.Date(data %>% head(n = 1) %>% pull("date"))  + 77 + 30, 
-                  ymin = 11,
-                  ymax = 34)
+                  ymin = 10,
+                  ymax = 39)
 print(g_final_deaths)
 

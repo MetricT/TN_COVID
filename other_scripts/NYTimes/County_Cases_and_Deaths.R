@@ -7,13 +7,13 @@ library(useful)
 my_state <- "Tennessee"
 
 ### What county are we interested in?
-my_county <- "Davidson"
+my_county <- "Cheatham"
 
 ### How much do we scale up deaths to make it visually similar in size to cases
 scale <- 80
 
 ### What is the lag in days between cases and deaths
-lag_st <- 10
+lag_st <- 14
 
 # Download this Github repo and add the path to the spreadsheet
 # https://github.com/nytimes/covid-19-data

@@ -15,6 +15,9 @@ ntpd_df <-
 
 #ntpd_df <- testres_df %>% filter(Date >= as.Date("2020-03-26"))
 
+# Temporary hack around a bat spot in TN's data - 2020-12-10
+ntpd_df <- ntpd_df %>% na.locf()
+
 new_ntpd_num <- ntpd_df %>% arrange(Date) %>% tail(n = 1) %>% select("D_TN") %>% pull() %>% format(big.mark = ",", scientific = FALSE)
 SMA <- ntpd_df %>% arrange(Date) %>% pull("D_TN") %>% SMA(n = 7) %>% tail(n = 1) %>% round() %>% format(big.mark = ",", scientific = FALSE)
 
@@ -40,4 +43,4 @@ graph_new_tests_perday <- ggplot(data = ntpd_df, aes(x = as.Date(Date), y = D_TN
   #  graph_log10_opts1 +
   #  graph_log10_opts2 +
   labs(title = newntpd_title, x = "", y = "")
-#print(graph_new_tests_perday)
+print(graph_new_tests_perday)

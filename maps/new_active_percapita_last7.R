@@ -56,7 +56,7 @@ map_new_active_percapita_last7 <-
   labs(title = paste("New Active Per ", scale_txt, " Last 7 Days, [ ",
                      new_active_tib %>% tail(n = 1) %>% pull("Date"), " ]", sep = "")) +
   scale_fill_gradient2(midpoint = 0,
-                       trans = "pseudo_log",
+#                       trans = "pseudo_log",
                        low  = "darkgreen",
                        mid  = "white",
                        high = "darkred")
