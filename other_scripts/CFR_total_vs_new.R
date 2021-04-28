@@ -36,7 +36,7 @@ g <-
   
   geom_hline(yintercept = combined %>% filter(!is.na(New_SMA)) %>% tail(n = 1) %>% pull(New_SMA), linetype = "dotted") + 
   
-  scale_y_continuous(labels = scales::percent, limits = c(0, 0.05)) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 0.07)) +
   scale_color_manual(name = "CFR",
                      values = c("New Cases/Deaths\n(7 day average)" = "darkred",
                                 "Total Cases/Deaths"                = "darkseagreen4")) +

@@ -121,6 +121,27 @@ if (!exists("data_loaded")) {
     read_excel_url(mmwr_url) %>%
     mutate(DATE = as.Date(DATE))
   
+  vac_url_root <- "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/"
+  vaccine_age_url <- paste(vac_url_root, "COVID_VACCINE_COUNTY_AGE_GROUPS_CENSUS.XLSX", sep = "")
+  vaccine_age_df <- 
+    read_excel_url(vaccine_age_url) %>%
+    mutate(DATE = as.Date(DATE)) %>%
+    pivot_wider(id_cols = c("DATE", "PATIENT_COUNTY"), 
+                names_from = "AGE_GROUP_CENSUS", 
+                values_from = "RECIPIENT_COUNT") %>% 
+    janitor::clean_names() %>% 
+    mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
+    mutate(`x85+` = x85_89 + x90_94 + x95_99 + x100) %>%
+    select(-x100, -x85_89, -x90_94, -x95_99, -pending) %>%
+    pivot_longer(-c(date, patient_county), 
+                 names_to = "Age", 
+                 values_to = "Count") %>%
+    filter(!patient_county %in% c("OUT OF STATE")) %>%
+    mutate(Age = gsub("x", "", Age), Age = gsub("_", "-", Age)) %>%
+    rename(County = patient_county,
+           Date = date)
+  
+  
   ################################################################################
   ### Cleaning the state's data...
   ################################################################################
@@ -139,6 +160,7 @@ if (!exists("data_loaded")) {
   ### Todo:  Add a patch for data earlier than the state's DB.   Just straight
   ### data, no fancy patch
   
+  #data_loaded <- 1
 }
 
 
@@ -238,7 +260,8 @@ county_acs <-
           year        = 2018,
           geometry    = TRUE,
           cache_table = TRUE) %>%
-  rename(POP2018 = estimate)
+  rename(POP2018 = estimate) %>%
+  arrange(NAME)
 
 ### Split the Census data apart into a map...
 tn_map_df <-
@@ -703,6 +726,7 @@ source("maps/new_cases.R")                     # New confirmed cases
 source("maps/new_deaths_last7.R")              # New deaths last 7 days
 source("maps/new_recovered_last7.R")           # New recovered last 7 days
 source("maps/new_active_last7.R")              # New active last 7 days
+source("maps/vaccine_per_capita.R")            # Vaccine >= 1 shot per capita
 
 
 ################################################################################
@@ -757,7 +781,7 @@ grob_charts <-
 grob_maps <-
  plot_grid(map_new_deaths_last7,    map_new_cases,
            map_new_active_last7,    map_total_active_percapita,
-           map_total_active_percapita_last7 ,  map_total_deaths_percapita,
+           map_total_active_percapita_last7 ,  map_tn_vaccine_per_capita ,
            ncol = 2, nrow = 3, align = "hv")
    
 #grob_maps <-

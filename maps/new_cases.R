@@ -37,4 +37,4 @@ map_new_cases <-
             nudge_y = counties$nudge_y) +
   labs(title = paste("New Cases: ", num, sep = "")) +
   scale_fill_gradientn(colours = map_palette, trans = "pseudo_log")
-#print(map_new_cases)
+print(map_new_cases)

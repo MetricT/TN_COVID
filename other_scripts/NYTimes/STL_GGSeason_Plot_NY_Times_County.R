@@ -16,7 +16,7 @@ my_county <- "Davidson"
 ### to Harvard, it's 4-5 days, according to WHO it's 5-6 days, so I choose 5.
 ### We have "date of confirmed infection", so if we subtract 5 days, it should
 ### give us a good estimate about the date the infection occurs.
-lag <- 6
+lag <- 5
 
 ### Pull cases data from the NY Times repo below and change the path
 ### as needed

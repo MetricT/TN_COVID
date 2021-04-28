@@ -134,6 +134,7 @@ g_regional_curves_deaths <-
   
   labs(title = "Deaths by Political Lean", x = "", y = "") +
   scale_y_continuous(labels = scales::comma) +
+  scale_x_date(breaks = "6 months") + 
   
   scale_fill_manual(values = c("Very\nDem"       = "#0015BC",
                                "Dem"             = "#8bb1ff",
@@ -259,7 +260,7 @@ g_deaths_stacked_per <-
   ) +
   
   geom_area(color="black", size = 0.4, alpha = .8) +
-  scale_y_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent, breaks = pretty_breaks(5)) + 
   geom_hline(yintercept = 0.5, linetype = "dashed") + 
   scale_fill_manual(values = c("Very\nDem"     = "#0015BC",
                                "Dem"           = "#8bb1ff",
@@ -281,17 +282,17 @@ g_final_deaths <-
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 170, 
                     xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 170 + 70, 
                     ymin = 1200,
-                    ymax = 2200) +
+                    ymax = 3400) +
   annotation_custom(ggplotGrob(g_map_usa_regions_deaths), 
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 80,
                     xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 80 + 85, 
                     ymin = 1300,
-                    ymax = 2300) + 
+                    ymax = 3400) + 
   
   annotation_custom(ggplotGrob(g_regional_curves_deaths), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 10,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 10 + 33, 
-                    ymin = 2200,
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 20,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 20 + 63, 
+                    ymin = 3400,
                     ymax = 150)
 print(g_final_deaths)
 

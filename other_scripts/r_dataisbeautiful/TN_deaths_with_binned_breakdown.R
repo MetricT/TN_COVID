@@ -36,6 +36,7 @@ bins <-
 spreadsheet <- 
   "../Datasets/nytimes/covid-19-data/us-counties.csv" %>%
   read_csv(col_names = TRUE, col_types = "Dcccdd") %>%
+  filter(date >= as.Date("2021-03-01")) %>%
   mutate(state_fips = substr(fips, 1, 2)) %>%
   filter(!state_fips %in% c(69, 72, 78)) %>%
   filter(!is.na(state_fips)) %>%

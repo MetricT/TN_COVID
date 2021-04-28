@@ -142,7 +142,7 @@ g_cases_stacked_per <-
     plot.background = element_rect(fill = "transparent",colour = NA)) +
   geom_area(color="black", size = 0.2, alpha = 0.8) +
   scale_fill_manual(name = "Age Group", values = my_palette) + 
-  scale_y_continuous(labels = scales::percent) + #, limits = c(0, 1)) + 
+  scale_y_continuous(labels = scales::percent) + #, limits = c(0, 0.4)) + 
   labs(title = "TN Proportion of New Cases", x = "Date", y = "")
 print(g_cases_stacked_per)
 

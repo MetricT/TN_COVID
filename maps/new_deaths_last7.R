@@ -38,7 +38,7 @@ new_deaths_last7_label[new_deaths_last7_label == 0] <- ""
 ### By default use black for the font, but if the value is over 1/2's of the way
 ### to the max, use the white font instead as it looks nicer
 frac <- 0.5 * (counties$new_deaths_last7 %>% na.omit() %>% max())
-counties$textcolor = if_else(counties$new_deaths_last7 > frac, "white", "black")
+counties$new_death_7_textcolor = if_else(counties$new_deaths_last7 > frac, "white", "black")
 
 map_new_deaths_last7 <-
   ggplot(counties) +
@@ -49,7 +49,7 @@ map_new_deaths_last7 <-
   geom_sf(data = counties$geometry, aes(fill = counties$new_deaths_last7), size = geom_thickness) +
   #geom_sf(data = new_deaths_border$geometry, size = 0.6, color = "firebrick2", fill = NA, alpha = 0) +
   geom_text(data = counties, size = map_fontsize, fontface = "bold",
-            color = counties$textcolor,
+            color = counties$new_death_7_textcolor,
             aes(x     = county_centers$x,
                 y     = county_centers$y,
                 label = new_deaths_last7_label),

@@ -1,6 +1,7 @@
 # Original Phil Williams post - https://www.facebook.com/PhilWilliamsNC5/posts/10157183186395824
 
 data <- total_active_tib
+data_txt <- "Total Active"
 
 cases_percapita_last7 <-
   data %>%
@@ -79,13 +80,13 @@ g_diverging <-
            aes(fill = color, alpha = alpha)) +
   scale_y_continuous(labels = labels_shift_mean) +
 
-  scale_fill_manual(name = "New Cases per 100k",
+  scale_fill_manual(name = paste(data_txt, "per 100k"),
                     labels = c("Below Average", "Above Average"),
                     values = c("darkgreen", "firebrick2")) +
-  labs(title = "COVID-19 New Cases Per Capita, 7-day average",
-       subtitle = paste("New cases/daily/100k Residents as of", this_date),
+  labs(title = paste("COVID-19", data_txt, "Per Capita, 7-day average"),
+       subtitle = paste(data_txt, "/daily/100k Residents as of ", this_date, sep = ""),
        x = "County",
-       y = "New Cases Per Capita Last 7 days") + 
+       y = paste(data_txt, "Per 100k Residents Last 7 days")) + 
   coord_flip()
 print(g_diverging)
 
@@ -134,3 +135,4 @@ g_final <-
                     ymin = 1.5, 
                     ymax = 250)
 print(g_final)
+
