@@ -27,7 +27,7 @@ si_std  <- 4.75
 ### or if you want you can access it directly at:
 ### https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv
 spreadsheet <- 
-  "../Datasets/nytimes/covid-19-data/us-counties.csv" %>%
+  "git/Datasets/nytimes/covid-19-data/us-counties.csv" %>%
   read_csv(col_names = TRUE, col_types = "Dccddd") %>%
   mutate(location = paste(county, " Co., ", state, sep = "")) %>%
   filter(location %in% my_locations) %>%
@@ -52,8 +52,8 @@ data <-
   select(date, location, new_cases) %>%
   rename(dates = date,
          I = new_cases) %>%
-  filter(dates >= as.Date("2020-06-01")) %>%
-  mutate(location = paste(location, " [Sturgis Bike Rally 2020]", sep =))
+  filter(dates >= as.Date("2021-06-01")) %>%
+  mutate(location = paste(location, " [Sturgis Bike Rally 2021]", sep =))
 
 
 ### Create a blank tibble to hold our EpiEstim output

@@ -25,18 +25,19 @@ combined <-
          New_SMA = DeathRate_New_SMA)
 
 g <- 
-  ggplot(data = combined, aes(x = as.Date(Date))) +
+  ggplot(data = combined) +
   theme_bw() +
   theme(legend.title = element_blank()) +
 #  geom_point(aes(y = New), color = "grey", shape = 20) + 
-  geom_line(aes(y = Total,   color = "Total Cases/Deaths")          , size = 1.2) +
-  geom_line(aes(y = New_SMA, color = "New Cases/Deaths\n(7 day average)"), size = 1.2) +
-  
-  geom_point(data = combined  %>% filter(!is.na(New_SMA)) %>% tail(n = 1), aes(y = New_SMA, color = "New Cases/Deaths\n(7 day average)"), size = 3) +
+  #geom_smooth(aes(x = as.Date(Date), y = New_SMA), method = "loess", formula = "y ~ x") + 
+  geom_line(aes(x = as.Date(Date), y = Total,   color = "Total Cases/Deaths")          , size = 1.2) +
+  geom_line(aes(x = as.Date(Date), y = New_SMA, color = "New Cases/Deaths\n(7 day average)"), size = 1.2) +
+
+  geom_point(data = combined  %>% filter(!is.na(New_SMA)) %>% tail(n = 1), aes(x = as.Date(Date), y = New_SMA, color = "New Cases/Deaths\n(7 day average)"), size = 3) +
   
   geom_hline(yintercept = combined %>% filter(!is.na(New_SMA)) %>% tail(n = 1) %>% pull(New_SMA), linetype = "dotted") + 
   
-  scale_y_continuous(labels = scales::percent, limits = c(0, 0.07)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),  breaks = pretty_breaks(8)) +
   scale_color_manual(name = "CFR",
                      values = c("New Cases/Deaths\n(7 day average)" = "darkred",
                                 "Total Cases/Deaths"                = "darkseagreen4")) +

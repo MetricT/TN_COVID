@@ -142,7 +142,7 @@ g_regional_curves_deaths <-
                                "GOP"             = "#ff8b98",
                                "Very\nGOP"       = "#E9141D")) +
     
-  facet_wrap(~ subtype, nrow = 5, ncol = 1, strip.position = "right")
+  facet_wrap(~ subtype, nrow = 1, ncol = 5, strip.position = "right")
 print(g_regional_curves_deaths)
 
 ################################################################################
@@ -279,20 +279,20 @@ print(g_deaths_stacked_per)
 g_final_deaths <-
   g_deaths_stacked + 
   annotation_custom(ggplotGrob(g_deaths_stacked_per), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 170, 
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 170 + 70, 
-                    ymin = 1200,
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 370, 
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 370 + 150, 
+                    ymin = 1800,
                     ymax = 3400) +
   annotation_custom(ggplotGrob(g_map_usa_regions_deaths), 
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 80,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 80 + 85, 
-                    ymin = 1300,
-                    ymax = 3400) + 
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 80 + 125, 
+                    ymin = 1100,
+                    ymax = 2900) + 
   
   annotation_custom(ggplotGrob(g_regional_curves_deaths), 
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 20,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 20 + 63, 
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 20 + 263, 
                     ymin = 3400,
-                    ymax = 150)
+                    ymax = 2600)
 print(g_final_deaths)
 

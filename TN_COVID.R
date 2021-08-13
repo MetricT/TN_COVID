@@ -4,7 +4,7 @@
 ### TN Dept. of Health COVID-19 website:
 ###     https://www.tn.gov/health/cedep/ncov.html
 ###
-### Note: You will need a Census API key in order to access their data.  You
+### Note: You will need a Census API key in order to access their data.  You 
 ###       can get a key by going to this website:
 ###
 ###       https://api.census.gov/data/key_signup.html
@@ -87,9 +87,9 @@ if (!exists("data_loaded")) {
   ###        yet.   Test the data, and die if it's yesterday's data.   Obviously
   ###        comment this out if you *want* yesterday's data
   data_date <- age_ss_df  %>% select(DATE) %>% arrange(DATE) %>% tail(n = 1) %>% pull()
-  if (data_date < Sys.Date() & (Sys.time() %>% hour()) >= 17) {
-    stop("TN Spreadsheets haven't been updated with today's data yet.  Last data from ", data_date, ". Exiting...")
-  }
+  #if (data_date < Sys.Date() & (Sys.time() %>% hour()) >= 17) {
+   # stop("TN Spreadsheets haven't been updated with today's data yet.  Last data from ", data_date, ". Exiting...")
+  #}
 
   age_by_county_df  <-
     read_excel_url(age_by_county_url) %>%
@@ -106,11 +106,12 @@ if (!exists("data_loaded")) {
                                  "numeric", "numeric", "numeric", "numeric",
                                  "numeric", "numeric", "numeric", "numeric",
                                  "numeric", "numeric", "numeric", "numeric",
-                                 "numeric", "numeric", "numeric", "numeric", "numeric")) %>%
+                                 "numeric", "numeric", "numeric")) %>%
     mutate(DATE = as.Date(DATE))
 
   race_ethnicity_sex_df <-
     read_excel_url(race_ethnicity_sex_url) %>%
+    rename(Date = DATE) %>%
     mutate(Date = as.Date(Date))
 
   #county_school_df <-
@@ -154,7 +155,7 @@ if (!exists("data_loaded")) {
   ###
   ### Comment out the line below if you want to use the "pure" data without my
   ### fix
-  source("patches/2020-06-28/patch_injector.R")
+#  source("patches/2020-06-28/patch_injector.R")
   #source("patch.R")
   
   ### Todo:  Add a patch for data earlier than the state's DB.   Just straight
@@ -291,9 +292,12 @@ total_cases_tib <-
   select(DATE, COUNTY, TOTAL_CASES) %>%
   mutate(Date = as.Date(DATE)) %>%
   select(-DATE) %>%
-  #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
+  filter(!COUNTY %in% c("Pending", "Out of State")) %>%
   arrange(Date, COUNTY) %>%
-  pivot_wider(names_from = c("COUNTY"),
+#  unique() %>%
+#  select(Date, COUNTY, TOTAL_CASES) %>%
+  pivot_wider(id_cols = c("Date"), 
+              names_from = c("COUNTY"),
               values_from = c("TOTAL_CASES")) %>%
   select("Date", sort(peek_vars())) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
@@ -344,50 +348,50 @@ new_deaths_tib <-
   mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
   select(Date, Total, sort(peek_vars()))
 
-total_recovered_tib <-
-  county_new_df %>%
-  #select(DATE, COUNTY, TOTAL_RECOVERED) %>%
-  select(DATE, COUNTY, TOTAL_RECOVERED, TOTAL_INACTIVE_RECOVERED) %>%
-  mutate(Date = as.Date(DATE)) %>%
-  select(-DATE) %>%
-  filter(Date >= as.Date("2020-04-10")) %>%
+#total_recovered_tib <-
+#  county_new_df %>%
+#  #select(DATE, COUNTY, TOTAL_RECOVERED) %>%
+#  select(DATE, COUNTY, TOTAL_RECOVERED, TOTAL_INACTIVE_RECOVERED) %>%
+#  mutate(Date = as.Date(DATE)) %>%
+#  select(-DATE) %>%
+#  filter(Date >= as.Date("2020-04-10")) %>%
+#
+#  # Patch to fix TN DoH Change on 9/3/20
+#  replace(is.na(.), 0) %>%
+#  group_by(Date, COUNTY) %>%
+#  summarize(TOTAL_RECOVERED = TOTAL_RECOVERED + TOTAL_INACTIVE_RECOVERED) %>%
+#  ungroup() %>%
+#  
+#  filter(!COUNTY %in% c("Pending", "Out of State")) %>%
+#  arrange(Date, COUNTY) %>%
+#  pivot_wider(names_from = c("COUNTY"),
+#              values_from = c("TOTAL_RECOVERED")) %>%
+#  select("Date", sort(peek_vars())) %>%
+#  mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
+#  mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
+#  select(Date, Total, sort(peek_vars()))
 
-  # Patch to fix TN DoH Change on 9/3/20
-  replace(is.na(.), 0) %>%
-  group_by(Date, COUNTY) %>%
-  summarize(TOTAL_RECOVERED = TOTAL_RECOVERED + TOTAL_INACTIVE_RECOVERED) %>%
-  ungroup() %>%
-  
-  #filter(!COUNTY %in% c("Pending", "Out of State")) %>%
-  arrange(Date, COUNTY) %>%
-  pivot_wider(names_from = c("COUNTY"),
-              values_from = c("TOTAL_RECOVERED")) %>%
-  select("Date", sort(peek_vars())) %>%
-  mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
-  mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(peek_vars()))
-
-new_recovered_tib <-
-  county_new_df %>%
-  #select(DATE, COUNTY, NEW_RECOVERED) %>%
-  select(DATE, COUNTY, NEW_RECOVERED, NEW_INACTIVE_RECOVERED) %>%
-  mutate(Date = as.Date(DATE)) %>%
-  select(-DATE) %>%
-  filter(Date >= as.Date("2020-04-10")) %>%
-  
-  # Patch to fix TN DoH Change on 9/3/20
-  replace(is.na(.), 0) %>%
-  group_by(Date, COUNTY) %>%
-  summarize(NEW_RECOVERED = NEW_RECOVERED + NEW_INACTIVE_RECOVERED) %>%
-  ungroup() %>%
-  
-  arrange(Date, COUNTY) %>%
-  pivot_wider(names_from = c("COUNTY"),
-              values_from = c("NEW_RECOVERED")) %>%
-  select("Date", sort(peek_vars())) %>%
-  mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
-  mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  select(Date, Total, sort(peek_vars()))
+#new_recovered_tib <-
+#  county_new_df %>%
+#  #select(DATE, COUNTY, NEW_RECOVERED) %>%
+#  select(DATE, COUNTY, NEW_RECOVERED, NEW_INACTIVE_RECOVERED) %>%
+#  mutate(Date = as.Date(DATE)) %>%
+#  select(-DATE) %>%
+#  filter(Date >= as.Date("2020-04-10")) %>%
+#  
+#  # Patch to fix TN DoH Change on 9/3/20
+#  replace(is.na(.), 0) %>%
+#  group_by(Date, COUNTY) %>%
+#  summarize(NEW_RECOVERED = NEW_RECOVERED + NEW_INACTIVE_RECOVERED) %>%
+#  ungroup() %>%
+#  
+#  arrange(Date, COUNTY) %>%
+#  pivot_wider(names_from = c("COUNTY"),
+#              values_from = c("NEW_RECOVERED")) %>%
+#  select("Date", sort(peek_vars())) %>%
+#  mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
+#  mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
+#  select(Date, Total, sort(peek_vars()))
 
 total_active_tib <-
   county_new_df %>%
@@ -518,33 +522,33 @@ new_deaths_by_county <-
 ###################################################
 # Total recovered by county
 ###################################################
-total_recovered_by_county <-
-  total_recovered_tib %>%
-  pivot_longer(-Date) %>%
-  filter(!name %in% c("Pending", "Out of State")) %>%
-  pivot_wider(id_cols = "Date", names_from = "name", values_from = "value") %>%
-  tail(n = 1) %>%
-  select(-Total) %>%
-  pivot_longer(-Date) %>%
-  select(name, value) %>%
-  rename(County = name,
-         total_recovered = value)
+#total_recovered_by_county <-
+#  total_recovered_tib %>%
+#  pivot_longer(-Date) %>%
+#  filter(!name %in% c("Pending", "Out of State")) %>%
+#  pivot_wider(id_cols = "Date", names_from = "name", values_from = "value") %>%
+#  tail(n = 1) %>%
+#  select(-Total) %>%
+#  pivot_longer(-Date) %>%
+#  select(name, value) %>%
+#  rename(County = name,
+#         total_recovered = value)
 
 
 ###################################################
 # New recovered by county
 ###################################################
-new_recovered_by_county <-
-  new_recovered_tib %>%
-  pivot_longer(-Date) %>%
-  filter(!name %in% c("Pending", "Out of State")) %>%
-  pivot_wider(id_cols = "Date", names_from = "name", values_from = "value") %>%
-  tail(n = 1) %>%
-  select(-Total) %>%
-  pivot_longer(-Date) %>%
-  select(name, value) %>%
-  rename(County = name,
-         new_recovered = value)
+#new_recovered_by_county <-
+#  new_recovered_tib %>%
+#  pivot_longer(-Date) %>%
+#  filter(!name %in% c("Pending", "Out of State")) %>%
+#  pivot_wider(id_cols = "Date", names_from = "name", values_from = "value") %>%
+#  tail(n = 1) %>%
+#  select(-Total) %>%
+#  pivot_longer(-Date) %>%
+#  select(name, value) %>%
+#  rename(County = name,
+#         new_recovered = value)
 
 
 ###################################################
@@ -588,9 +592,9 @@ stats_df <-
   left_join(total_deaths_by_county,    by = "County") %>%
   left_join(new_deaths_by_county,      by = "County") %>%
   left_join(total_active_by_county,    by = "County") %>%
-  left_join(new_active_by_county,      by = "County") %>%
-  left_join(total_recovered_by_county, by = "County") %>%
-  left_join(new_recovered_by_county,   by = "County")
+  left_join(new_active_by_county,      by = "County") #%>%
+#  left_join(total_recovered_by_county, by = "County") %>%
+#  left_join(new_recovered_by_county,   by = "County")
 
 
 ################################################################################
@@ -605,14 +609,14 @@ cases_data <-
   filter(total_cases != 0) %>%
   mutate(new_cases = c(total_cases[1], diff(total_cases)))
 
-recovered_data <-
-  total_recovered_tib %>%
-  select(Date, all_of(graph_counties)) %>%
-  mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
-  rename(total_recovered = Total) %>%
-  rename(date = Date) %>%
-  filter(total_recovered != 0) %>%
-  mutate(new_recovered = c(total_recovered[1], diff(total_recovered)))
+#recovered_data <-
+#  total_recovered_tib %>%
+#  select(Date, all_of(graph_counties)) %>%
+#  mutate(Total = rowSums(select(., !starts_with("Date")))) %>%
+#  rename(total_recovered = Total) %>%
+#  rename(date = Date) %>%
+#  filter(total_recovered != 0) %>%
+#  mutate(new_recovered = c(total_recovered[1], diff(total_recovered)))
 
 deaths_data <-
   total_deaths_tib %>%
@@ -641,7 +645,7 @@ hospital_data <-
 
 merge_data <-
   cases_data %>%
-  full_join(recovered_data, by = "date") %>%
+  #full_join(recovered_data, by = "date") %>%
   full_join(deaths_data,    by = "date") %>%
   full_join(active_data,    by = "date") %>%
   full_join(hospital_data,  by = "date") %>%
@@ -650,11 +654,11 @@ merge_data <-
 
 age_df <-
   age_ss_df %>%
-  select(DATE, AGE_RANGE, AR_CASECOUNT, NEW_ARCASES,
+  select(DATE, AGE_RANGE, AR_TOTALCASES, AR_NEWCASES,
          AR_TOTALDEATHS, AR_NEWDEATHS) %>%
   rename(AGE = AGE_RANGE,
-         TOTAL_CASES = AR_CASECOUNT,
-         NEW_CASES = NEW_ARCASES,
+         TOTAL_CASES = AR_TOTALCASES,
+         NEW_CASES = AR_NEWCASES,
          TOTAL_DEATHS = AR_TOTALDEATHS,
          NEW_DEATHS = AR_NEWDEATHS)
 
@@ -703,7 +707,7 @@ counties$nudge_y[counties$County == "Moore"]     <-  0.015
 
 
 
-################################################################################
+ ################################################################################
 ### Load maps
 ################################################################################
 #source("maps/new_active_percapita_last7.R")   # New active per capita last 7
@@ -724,7 +728,7 @@ source("maps/total_deaths_percapita.R")        # Total deaths per 100k
 source("maps/total_active_percapita.R")        # Total active per 100k
 source("maps/new_cases.R")                     # New confirmed cases
 source("maps/new_deaths_last7.R")              # New deaths last 7 days
-source("maps/new_recovered_last7.R")           # New recovered last 7 days
+#source("maps/new_recovered_last7.R")           # New recovered last 7 days
 source("maps/new_active_last7.R")              # New active last 7 days
 source("maps/vaccine_per_capita.R")            # Vaccine >= 1 shot per capita
 
@@ -739,7 +743,8 @@ source("maps/vaccine_per_capita.R")            # Vaccine >= 1 shot per capita
 #source("graphs/total_deaths.R")             # Total deaths
 #source("graphs/case_fatality_rate.R")       # Case Fatality Rate
 #source("graphs/total_positive_test_rate.R") # Tot. Pos. Rate
-source("graphs/new_recovered.R")             # New recovered
+#source("graphs/new_recovered.R")            # New recovered
+source("graphs/new_vaccines_perday.R")       # Total active
 source("graphs/total_active.R")              # Total active
 source("graphs/new_active.R")                # New active
 source("graphs/new_deaths.R")                # New deaths
@@ -768,7 +773,7 @@ footer_string <- paste("SMA = 7-day Simple Moving Average\n",
 
 grob_charts <-
  plot_grid(graph_new_positive_test_rate, graph_new_tests_perday,  graph_new_hospital,  graph_age_cases,    graph_age_deaths,
-           graph_new_cases,              graph_new_deaths,        graph_new_active,    graph_total_active, graph_new_recover,
+           graph_new_cases,              graph_new_deaths,        graph_new_active,    graph_total_active, graph_new_vaccine,
           ncol = 5, nrow = 2, align = "hv")
 
 #source("graphs/special_image.R")             # Special images

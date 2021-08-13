@@ -19,23 +19,25 @@ my_county <-
   unique() %>% 
   pull()
 
+### Centered on Davidson
 my_county <- c("Montgomery", "Robertson", "Sumner",
                "Cheatham",   "Davidson",  "Wilson",
                "Dickson",    "Williamson", "Rutherford")
 
 #my_county <- c("Montgomery", "Cheatham")
 
-my_county <- c("Cheatham")
+#my_county <- c("Cheatham")
 
 data <-
   county_new_df %>% 
   select(DATE, COUNTY, NEW_CASES) %>% 
-  filter(DATE >= as.Date("2020-10-01")) %>%
+  filter(DATE >= as.Date("2021-03-01")) %>%
   filter(COUNTY %in% my_county) %>%
   filter(!is.na(NEW_CASES)) %>%
   rename(dates = DATE, county = COUNTY, I = NEW_CASES) %>%
   mutate(I = if_else(I < 0, 0, I)) %>%
-  filter(dates >= as.Date("2020-06-01"))
+  filter(dates >= as.Date("2021-03-01")) %>%
+  arrange(dates)
 
 mask_mandates_df <-  read_csv("data/mandates.csv")
 
@@ -158,7 +160,7 @@ g_rt_counties <-
   labs(title = title, x = "", y = "Rt")
 print(g_rt_counties)
 
-plot_grid(g_rt_counties,
-          g_rt_schools,
-          nrow = 1, ncol = 2, align = "hv")
+#plot_grid(g_rt_counties,
+#          g_rt_schools,
+#          nrow = 1, ncol = 2, align = "hv")
 

@@ -256,7 +256,7 @@ g_cases_stacked_per <-
   ) +
   
   geom_area(color="black", size = 0.4, alpha = .8) +
-  scale_y_continuous(labels = scales::percent) + 
+  scale_y_continuous(labels = scales::percent, breaks = pretty_breaks(5)) + 
   geom_hline(yintercept = 0.5, linetype = "dashed") + 
   scale_fill_manual(values = c("Very\nDem"     = "#0015BC",
                                "Dem"           = "#8bb1ff",
@@ -275,19 +275,19 @@ print(g_cases_stacked_per)
 g_final_cases <-
   g_cases_stacked + 
   annotation_custom(ggplotGrob(g_cases_stacked_per), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date"))  + 160,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date"))  + 160 + 75, 
-                    ymin = 100000,
-                    ymax = 205000) +
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date"))  + 360,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date"))  + 360 + 150, 
+                    ymin = 150000,
+                    ymax = 250000) +
   annotation_custom(ggplotGrob(g_map_usa_regions_cases), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 50,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 50 + 95, 
-                    ymin = 120000,
-                    ymax = 205000) + 
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 110,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 110 + 135, 
+                    ymin = 140000,
+                    ymax = 250000) + 
   
   annotation_custom(ggplotGrob(g_regional_curves_cases), 
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 10,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 10 + 43, 
-                    ymin = 30000,
-                    ymax = 205000)
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 10 + 100, 
+                    ymin = 40000,
+                    ymax = 250000)
 print(g_final_cases)

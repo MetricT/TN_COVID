@@ -8,34 +8,59 @@ library(forecast)
 library(naniar)
 library(useful)
 library(TTR)
-library(sf)
-library(cowplot)
 
+### Load outcome data from 2020 US Presidential election
+pres_2020 <-
+  "../Datasets/US_County_Level_Election_Results_08-16/2020_US_County_Level_Presidential_Results.csv" %>%
+  read_csv(col_names = TRUE, col_types = "cdcdddnddd") %>%
+  rename(fips = county_fips,
+         dem = per_dem,
+         rep = per_gop) %>%
+  mutate(fips = str_pad(fips, 5, pad = "0"),
+         year = 2020,
+         other = 1 - dem - rep) %>%
+  filter(substr(fips, 1, 2) == "47") %>%
+  mutate(fips = if_else(fips == "46113", "46102", fips)) %>%
+  mutate(fips = if_else(fips == "02270", "02158", fips)) %>%
+  rowwise() %>%
+  mutate(winner = max(dem, rep, other)) %>%
+  ungroup() %>%
+  mutate(winner = case_when(
+    winner == dem ~ "Democrat",
+    winner == rep ~ "Republican",
+    winner == other ~ "Other")) %>%
+  mutate(margin = rep - dem) %>%
+  mutate(county_name = gsub(" County", "", county_name)) %>%
+  select(fips, county_name, margin)
 
-### Get county population and divide them into bins according to population
-bins <-
+### Get county population
+pop <-
   get_acs(geography   = "county",
           variables   = c("B01003_001"),
-          year        = 2018,
+          state       = c("47"),
+          year        = 2019,
           geometry    = FALSE,
           cache_table = TRUE) %>%
-  rename(POP2018 = estimate) 
-
-bins <-
-  bins %>%
+  rename(POP2019 = estimate) %>%
   mutate(NAME = gsub(" County, Tennessee", "", NAME)) %>%
-  arrange(desc(POP2018)) %>%
-  mutate(cum_pop = cumsum(POP2018)) %>%
-  mutate(cum_pop_frac = cum_pop / sum(bins$POP2018)) %>%
+  rename(county = NAME) %>%
+  select(county, POP2019)
+
+bins <- 
+  pop %>% 
+  left_join(pres_2020, by = c("county" = "county_name")) %>%
+  arrange(margin)  %>%
+  mutate(cum_pop = cumsum(POP2019)) %>%
+  mutate(cum_pop_frac = cum_pop / 6709356) %>%
   mutate(bin = case_when(
-    cum_pop_frac <  0.251    ~ "Highest Population",
+    cum_pop_frac <  0.251    ~ "Democratic",
     cum_pop_frac >= 0.251 &
-      cum_pop_frac <  0.50  ~ "High Population",
-    cum_pop_frac >= 0.50 &
-      cum_pop_frac <  0.75  ~ "Low Population",
-    cum_pop_frac >= 0.75    ~ "Lowest Population",
-  )) %>%
-  select(GEOID, POP2018, bin)
+      cum_pop_frac <  0.501  ~ "Somewhat Republican",
+    cum_pop_frac >= 0.501 &
+      cum_pop_frac <  0.762  ~ "Republican",
+    cum_pop_frac >= 0.762    ~ "Very Republican",
+  ))
+
 
 spreadsheet <- 
   "../Datasets/nytimes/covid-19-data/us-counties.csv" %>%
@@ -56,15 +81,15 @@ spreadsheet <-
   pivot_wider(id_cols = c("date", "fips"), names_from = "type", values_from = "values")
   
 # Just pluck out TN
-#spreadsheet <- 
-#  spreadsheet %>% 
-#  filter(substr(fips, 1, 2) == "47") %>% 
-#  filter(date >= as.Date("2020-03-05")) %>%
-#  left_join((fips_codes %>% 
-#               mutate(fips = paste(state_code, county_code, sep = "")) %>% 
-#               mutate(county = gsub(" County", "", county)) %>% 
-#               filter(state_code == "47") %>% 
-#               select(county, fips)), by = "fips")
+spreadsheet <- 
+  spreadsheet %>% 
+  filter(substr(fips, 1, 2) == "47") %>% 
+  filter(date >= as.Date("2020-03-05")) %>%
+  left_join((fips_codes %>% 
+               mutate(fips = paste(state_code, county_code, sep = "")) %>% 
+               mutate(county = gsub(" County", "", county)) %>% 
+               filter(state_code == "47") %>% 
+               select(county, fips)), by = "fips")
 
 ### Pluck the date out to include in our graph
 current_date <- spreadsheet %>% arrange(date) %>% tail(n = 1) %>% pull("date")
@@ -79,8 +104,7 @@ data <-
   filter(!is.na(cases)) %>%
   filter(cases != 0) %>%
   arrange(date) %>% 
-  left_join(bins, by = c("fips" = "GEOID")) %>%
-  filter(!is.na(bin)) %>%
+  left_join(bins, by = "county") %>%
   group_by(date, bin) %>%
   summarize(cases = sum(cases, na.rm = TRUE)) %>%
   ungroup() %>%
@@ -102,7 +126,8 @@ data <-
 ################################################################################
 data$type <- 
   factor(data$type,
-         levels = rev(c("Highest Population", "High Population", "Low Population", "Lowest Population")))
+         levels = rev(c("Democratic", "Somewhat Republican", "Republican", "Very Republican")))
+#         levels = rev(c("Very Republican", "Republican", "Somewhat Republican", "Democratic")))
 
 g_regional_curves_cases <-
   ggplot(data = data, aes(x = as.Date(date), y = values)) +
@@ -113,14 +138,14 @@ g_regional_curves_cases <-
   geom_line(aes(y = values), color = "black", size = 1) +
   geom_area(aes(fill = as.factor(type))) +
   
-  labs(title = "", x = "", y = "") +
+  labs(title = "Regional Curves", x = "", y = "") +
   scale_y_continuous(labels = scales::comma) +
   
   scale_fill_manual(
-    values = c("Highest Population" = "#56106E",
-               "High Population"    = "#BB3754",
-               "Low Population"     = "#F98C0A",
-               "Lowest Population"  = "#FCFFA4")) +
+    values = c("Democratic"          = "#0015BC",
+               "Somewhat Republican" = "#f8b1b4",
+               "Republican"          = "#f06268",
+               "Very Republican"     = "#e9141d")) +
     
   facet_wrap(~ type, nrow = 4, ncol = 1, strip.position = "right")
 print(g_regional_curves_cases)
@@ -130,22 +155,23 @@ print(g_regional_curves_cases)
 ################################################################################
 county_map <-
   read_sf("../Shapefiles/us_county/us_county.shp") %>% 
-  filter(!STATEFP %in% c("60", "66", "69", "72", "78")) %>%
-  left_join(bins, by = "GEOID")
+  filter(STATEFP == "47") %>%
+  st_transform(crs = "+proj=aea +lat_1=25 +lat_2=50 +lon_0=-86") %>%
+  left_join(bins, by = c("NAME" = "county"))
 
-g_map_us_regions_cases <-
+g_map_tn_regions_cases <-
   ggplot(data = county_map) +
   theme_void() + 
   theme(legend.position = "none") +
-  geom_sf(aes(fill = as.factor(bin)), color = "black", size = 0.03) +
+  geom_sf(aes(fill = as.factor(bin)), color = "black", size = 0.4) +
   
   scale_fill_manual(
-    values = c("Highest Population" = "#56106E",
-               "High Population"    = "#BB3754",
-               "Low Population"     = "#F98C0A",
-               "Lowest Population"  = "#FCFFA4"))
+    values = c("Democratic"          = "#0015BC",
+               "Somewhat Republican" = "#f8b1b4",
+               "Republican"          = "#f06268",
+               "Very Republican"     = "#e9141d"))
   
-print(g_map_us_regions_cases)
+print(g_map_tn_regions_cases)
 
 ################################################################################
 ### Draw the main graph (stacked line graph of cases)
@@ -190,9 +216,9 @@ if (up_rate < 0) {
 subtitle <-
   paste(total_cases %>% format(big.mark = ",", scientific = FALSE), 
         " Total Cases (",
-        round(100 * total_cases / sum(bins$POP2018), 2),
+        round(100 * total_cases / 6651089, 2),
         "% of population)\n",
-        "Average ", growing_at, " new cases/day over the last 7 days\n",
+        "Growing at ", growing_at, " new cases/day\n",
         up_rate_txt, " ", abs(up_rate), "% from 7 days ago",
         sep = "")
 
@@ -203,13 +229,12 @@ g_cases_stacked <-
   theme(legend.position = "none") +
   geom_area(color="black", size = 0.4, alpha = 0.8) +
   scale_fill_manual(
-    values = c("Highest Population" = "#56106E",
-               "High Population"    = "#BB3754",
-               "Low Population"     = "#F98C0A",
-               "Lowest Population"  = "#FCFFA4")) +
+    values = c("Democratic"          = "#0015BC",
+               "Somewhat Republican" = "#f8b1b4",
+               "Republican"          = "#f06268",
+               "Very Republican"     = "#e9141d")) +
   scale_y_continuous(labels = scales::comma) + 
-  scale_x_date(breaks = "1 month") + 
-  labs(title = "Daily COVID-19 Cases in US binned by county population\nEach color represents 25% of the US Population",
+  labs(title = "Daily COVID-19 Cases in Tennessee",
        subtitle = subtitle,
        x = "Date", 
        y = "Daily Cases",
@@ -235,23 +260,18 @@ g_cases_stacked_per <-
         legend.position = "none",
         plot.background = element_rect(fill = "transparent",colour = NA)) +
   geom_area(color="black", size = 0.4, alpha = 0.8) +
-
-  ### Assuming the bins were divided perfectly
-  #geom_hline(yintercept = 0.25, linetype = "dotted") + 
-  #geom_hline(yintercept = 0.50, linetype = "dotted") + 
-  #geom_hline(yintercept = 0.75, linetype = "dotted") + 
   
   ### How the bins are *actually* divided...  
-  geom_hline(yintercept = 0.244, linetype = "dotted") + 
-  geom_hline(yintercept = 0.502, linetype = "dotted") + 
-  geom_hline(yintercept = 0.746, linetype = "dotted") + 
+  geom_hline(yintercept = 0.250, linetype = "dotted") + 
+  geom_hline(yintercept = 0.513, linetype = "dotted") + 
+  geom_hline(yintercept = 0.749, linetype = "dotted") + 
   scale_y_continuous(labels = scales::percent) + 
   scale_fill_manual(
-    values = c("Highest Population" = "#56106E",
-               "High Population"    = "#BB3754",
-               "Low Population"     = "#F98C0A",
-               "Lowest Population"  = "#FCFFA4")) +
-  labs(title = "Proportion of Daily Cases", x = "", y = "")
+    values = c("Democratic"          = "#0015BC",
+               "Somewhat Republican" = "#f8b1b4",
+               "Republican"          = "#f06268",
+               "Very Republican"     = "#e9141d")) +
+  labs(title = "Proportion of Statewide Daily Cases", x = "", y = "")
 print(g_cases_stacked_per)
 
 
@@ -262,19 +282,21 @@ print(g_cases_stacked_per)
 g_final_cases <-
   g_cases_stacked + 
   annotation_custom(ggplotGrob(g_cases_stacked_per), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date"))  + 360,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date"))  + 360 + 150, 
-                    ymin = 150000,
-                    ymax = 250000) +
-  annotation_custom(ggplotGrob(g_map_us_regions_cases), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 110,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 110 + 135, 
-                    ymin = 140000,
-                    ymax = 250000) + 
+                               xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 330,
+                               xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 330 + 180,
+                               ymin = 5000,
+                               ymax = 9000) +
   
+  annotation_custom(ggplotGrob(g_map_tn_regions_cases), 
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 120,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 120 + 150, 
+                    ymax = 10000,
+                    ymin = 6000) + 
+
   annotation_custom(ggplotGrob(g_regional_curves_cases), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 10,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 10 + 100, 
-                    ymin = 40000,
-                    ymax = 250000)
+                  xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 0,
+                  xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 0 + 100, 
+                  ymin = 550,
+                  ymax = 9000)
 print(g_final_cases)
+  

@@ -33,14 +33,15 @@ deaths <-
          week = mmwr_week,
          deaths = all_cause,
          state = jurisdiction_of_occurrence) %>%
+  mutate(yearweek = yearweek(date_decimal(year + (week - 1)/52))) %>%
   
   ### Comment out the line below to get graphs for all 50 states
-  #filter(state %in% c("United States", "Tennessee")) %>%
+  filter(state %in% c("United States", "Tennessee")) %>%
   #filter(state %in% c("United States", "Tennessee", "Kentucky", "North Carolina", "Georgia", "Alabama", "Mississipi", "Arkansas")) %>%
   #filter(state %in% c("Tennessee")) %>%
   #filter(state %in% c("United States")) %>%
   
-  mutate(thisyear = (year == 2020)) %>%
+  mutate(thisyear = (year >= 2020)) %>%
   group_by(state, year) %>%
 
   ### Filter out the first week in 2014, as it appears to be a huge outlier
@@ -54,13 +55,28 @@ deaths <-
   ###  incompleteness changes slightly every week. "
   ###
   ### https://www.mortality.org/Public/STMF_DOC/STMFmetadata.pdf
-  filter(!(year == 2020 & week %in% seq(max(week) - 2, max(week)))) #%>%
+  filter(!(year >= 2020 & week %in% seq(max(week) - 2, max(week)))) #%>%
   
   ### West Virginia and North Carolina are especially slow about reporting mortality
   ### numbers, so knock off an additional two weeks for those states
 
   ### Add this when you have time
-  
+
+deaths_mod_us <-
+  deaths %>%
+  filter(state == "United States") %>%
+  select(yearweek, deaths) %>%
+  as_tsibble(index = "yearweek") %>%
+  model(STL(deaths ~ season(period = "1 year"))) %>%
+  components()
+
+
+ggplot(data = deaths, aes(x = yearweek)) + 
+  theme_bw() + 
+  geom_line(aes(y = deaths)) +
+  facet_wrap(~state, scales = "free_y")
+
+
 
 ### Recombine NY & NYC
 deaths_non_ny <-
@@ -87,7 +103,7 @@ g_weekly_deaths <-
   geom_line(aes(col = thisyear)) +
   facet_wrap(~ state, scales = "free_y") +
   scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
-  guides(col = FALSE) +
+  guides(col = "none") +
   ggtitle("Weekly deaths") +
   labs(x = "Week", y = "") +
   geom_hline(yintercept = 0, col = "gray") +
@@ -97,7 +113,7 @@ print(g_weekly_deaths)
 
 ### How current is the data?   Shows the lag in weeks
 deaths %>%
-  filter(year == 2020) %>%
+  filter(year >= 2020) %>%
   group_by(state) %>%
   summarise(last_week = max(week)) %>%
   mutate(
@@ -117,13 +133,13 @@ excess_deaths <- deaths %>%
   filter(year >= 2015) %>%
   left_join(recent_deaths) %>%
   mutate(excess = deaths - median_deaths) %>%
-  mutate(thisyear = (year == 2020))
+  mutate(thisyear = (year >= 2020))
 
 ### Get county population
 pop <-
   get_acs(geography   = "state",
           variables   = c("B01003_001"),
-          year        = 2018,
+          year        = 2019,
           geometry    = FALSE,
           cache_table = TRUE) %>%
   rename(POP2018 = estimate,
@@ -143,9 +159,9 @@ excess_deaths <-
 
 excess_deaths_2020 <-
   excess_deaths %>%
-  filter(year == 2020) %>%
+  filter(year >= 2020) #%>%
 #  filter(week %in% c(37, 36))
-  filter(week > 25)
+  #filter(week > 25)
 
 ### Order graphs by the state seeing the worst impact
 us_order <- 
@@ -175,7 +191,7 @@ g_excess_deaths <-
 print(g_excess_deaths)
 
 g_excess_deaths <-
-  ggplot(data = excess_deaths %>% filter(year == 2020 & week > 1), aes(x = week, y = excess)) +
+  ggplot(data = excess_deaths %>% filter(year >= 2020), aes(x = week, y = excess)) +
   theme_bw() +
   geom_hline(yintercept = 0, col = "gray") +
   geom_area(fill = "orange", color = "black")  +
@@ -191,7 +207,7 @@ print(g_excess_deaths)
 
 ### Summarize excess deaths
 excess_deaths %>%
-  filter(year == 2020) %>%
+  filter(year >= 2020) %>%
   group_by(state) %>%
   summarise(
     excess = sum(excess),

@@ -10,7 +10,7 @@ my_state <- "Tennessee"
 scale <- 60
 
 ### What is the lag in days between cases and deaths
-lag_st <- 16
+lag_st <-23
 
 # Download this Github repo and add the path to the spreadsheet
 # https://github.com/nytimes/covid-19-data
@@ -46,8 +46,8 @@ g_cases_and_deaths <-
   
   geom_vline(xintercept = as.Date(current_date) - lag_st, linetype = "dotted") + 
   
-  labs(title = paste(my_state, " New Cases and New Deaths data from ", current_date, " lagged by ", lag_st, " days", sep = ""), x = "Date", y = "New Cases (blue)") + 
-  scale_y_continuous(labels = scales::comma, limits = c(400, 2300),
+  labs(title = paste(my_state, " New Cases [blue] and New Deaths [red] data from ", current_date, " lagged by ", lag_st, " days", sep = ""), x = "Date", y = "New Cases (blue)") + 
+  scale_y_continuous(labels = scales::comma, #limits = c(400,9300),
                      sec.axis = sec_axis(~ . / scale,
                                          name = "New Deaths (red)",
                                          labels = scales::comma))

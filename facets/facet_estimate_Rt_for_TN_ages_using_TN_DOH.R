@@ -21,38 +21,38 @@ spreadsheet <-
   
 data <-
   spreadsheet %>%
-  select(DATE, NEW_ARCASES, AGE_RANGE) %>%
+  select(DATE, AR_NEWCASES, AGE_RANGE) %>%
   rename(dates = DATE,
-         I = NEW_ARCASES,
+         I = AR_NEWCASES,
          age_range = AGE_RANGE) %>%
   mutate(dates = as.Date(dates)) %>%
   filter(age_range != "Pending") %>%
   pivot_wider(id_cols = "dates", names_from = "age_range", values_from = "I") %>%
   as_tsibble(index = "dates") %>%
   tsibble::fill_gaps() %>%
-  filter(!dates %in% c(as.Date("2020-06-28"), as.Date("2020-06-29"))) %>%
-  add_row(dates = as.Date("2020-06-28"),
-          "0-10 years"  = 61,
-          "11-20 years" = 117,
-          "21-30 years" = 294,
-          "31-40 years" = 195,
-          "41-50 years" = 180,
-          "51-60 years" = 117,
-          "61-70 years" = 76,
-          "71-80 years" = 42,
-          "81+ years"   = 18
-          ) %>%
-  add_row(dates = as.Date("2020-06-29"),
-          "0-10 years"  = 62,
-          "11-20 years" = 117,
-          "21-30 years" = 295,
-          "31-40 years" = 195,
-          "41-50 years" = 181,
-          "51-60 years" = 118,
-          "61-70 years" = 76,
-          "71-80 years" = 43,
-          "81+ years"   = 19
-  ) %>% arrange(dates) %>%
+#  filter(!dates %in% c(as.Date("2020-06-28"), as.Date("2020-06-29"))) %>%
+#  add_row(dates = as.Date("2020-06-28"),
+#          "0-10 years"  = 61,
+#          "11-20 years" = 117,
+#          "21-30 years" = 294,
+#          "31-40 years" = 195,
+#          "41-50 years" = 180,
+#          "51-60 years" = 117,
+#          "61-70 years" = 76,
+#          "71-80 years" = 42,
+#          "81+ years"   = 18
+#          ) %>%
+#  add_row(dates = as.Date("2020-06-29"),
+#          "0-10 years"  = 62,
+#          "11-20 years" = 117,
+#          "21-30 years" = 295,
+#          "31-40 years" = 195,
+#          "41-50 years" = 181,
+#          "51-60 years" = 118,
+#          "61-70 years" = 76,
+#          "71-80 years" = 43,
+#          "81+ years"   = 19  ) %>%
+  arrange(dates) %>%
   
   # Fix negative values by averaging them with the previous day's value
   mutate("81+ years" = if_else(dates == as.Date("2020-04-15"), 3, `81+ years`)) %>%
@@ -83,7 +83,7 @@ foo <-
   filter(COUNTY == "Cheatham") %>% 
   filter(AGE_GROUP != "Pending") %>%
   select(-COUNTY) %>% 
-  pivot_wider(id_cols = "DATE", names_from = "AGE_GROUP", values_from = "CASE_COUNT") %>%
+  pivot_wider(id_cols = "DATE", names_from = "AGE_GROUP", values_from = "TOTAL_CASES") %>%
   mutate(across(!starts_with("DATE"),
               .fns = list(new = ~ c(0, diff(.))),
               .names = "{fn}_{col}")) %>%
@@ -176,8 +176,7 @@ Rt_tib$age_group <- factor(Rt_tib$age_group, levels = all_age_groups)
 
 Rt_tib <-
   Rt_tib %>%
-  filter(dates >= as.Date("2020-06-20")) %>%
-  filter(dates <= as.Date("2020-07-21"))
+  filter(dates >= as.Date("2021-05-01"))
 
 ### Render the graph and done!
 g_rt_age_group <-

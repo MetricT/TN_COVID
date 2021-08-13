@@ -15,34 +15,33 @@ invisible(lapply(packages, "library", quietly = TRUE,
 ### in this order, so arrange them how you want.
 
 ### If you want to do every county in the state
-my_location <- 
-  total_cases_tib %>% 
-  pivot_longer(-Date, names_to = "County", values_to = "Value") %>% 
-  select(County) %>% 
-  filter(!County %in% c("Total", "Pending", "Out of State")) %>% 
-  unique() %>% 
-  pull()
+#my_location <- 
+#  total_cases_tib %>% 
+#  pivot_longer(-Date, names_to = "County", values_to = "Value") %>% 
+#  select(County) %>% 
+#  filter(!County %in% c("Total", "Pending", "Out of State")) %>% 
+# unique() %>% 
+#  pull()
 
 my_location <- c("Montgomery", "Robertson", "Sumner", "Cheatham",   "Davidson",  "Wilson",  "Dickson",    "Williamson", "Rutherford")
 
 #my_location <- c("Montgomery", "Cheatham")
 
-my_location <- c("Cheatham")
+#my_location <- c("Cheatham")
 
 
-start_dates <- 
-  tribble(
-  ~county,       ~first_day,
-  "Montgomery",  "2020-08-31",
-  "Robertson",   "2020-08-10",
-  "Sumner",      "2020-08-03",
-  "Cheatham",    "2020-08-13",
-  "Davidson",    "2020-08-04",
-  "Wilson",      "2020-08-17",
-  "Dickson",     "2020-08-03",
-  "Williamson",  "2020-08-07",
-  "Rutherford",  "2020-08-13",
-  ) %>% mutate(first_day = as.Date(first_day))
+#start_dates <- 
+#  tribble(
+#  ~county,       ~first_day,
+#  "Robertson",   "2020-08-10",
+#  "Sumner",      "2020-08-03",
+#  "Cheatham",    "2020-08-13",
+#  "Davidson",    "2020-08-04",
+#  "Wilson",      "2020-08-17",
+#  "Dickson",     "2020-08-03",
+#  "Williamson",  "2020-08-07",
+#  "Rutherford",  "2020-08-13",
+#  ) %>% mutate(first_day = as.Date(first_day))
 
 
 ################################################################################
@@ -104,10 +103,13 @@ data <-
   read_excel_url() %>%
   mutate(DATE = as.Date(DATE)) %>%
   select(DATE, NEW_CASES, COUNTY) %>%
-  filter(DATE >= as.Date("2020-10-01")) %>%
+  filter(DATE >= as.Date("2021-07-01")) %>%
   rename(dates    = DATE,
          I        = NEW_CASES,
          location = COUNTY) %>%
+  
+  arrange(dates) %>%
+  unique() %>%
   
   # Filter it to just the locations specified
   filter(location %in% my_location) %>%
