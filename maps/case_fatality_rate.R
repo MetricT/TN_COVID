@@ -62,7 +62,7 @@ map_case_fatality_rate <- ggplot(counties) +
             color = counties$textcolor,
             aes(x     = county_centers$x,
                 y     = county_centers$y,
-                label = case_fatality_rate_label),
+                label = paste(case_fatality_rate_label, "%", sep = "")),
             nudge_x = counties$nudge_x,
             nudge_y = counties$nudge_y) +
   labs(title = cfr_title) +

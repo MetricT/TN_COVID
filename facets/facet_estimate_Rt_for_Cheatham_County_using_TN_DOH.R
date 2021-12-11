@@ -7,65 +7,20 @@ library(tsibble)
 library(feasts)
 library(EpiEstim)
 library(forecast)
-library(geofacet)
 
-### If you want to do every county in the state
-my_county <- 
-  total_cases_tib %>% 
-  pivot_longer(-Date, names_to = "County", values_to = "Value") %>% 
-  select(County) %>% 
-  filter(!County %in% c("Total", "Pending", "Out of State")) %>% 
-  mutate(County = ifelse(County == "Dekalb", "DeKalb", County)) %>%
-  unique() %>% 
-  pull()
-
-facet_map <- 
-  us_tn_counties_grid1 %>% 
-  mutate(name = if_else(name == "Dekalb", "DeKalb", name),
-         code = if_else(code == "Dekalb", "DeKalb", code))
-
-### Counties centered on Davidson
-my_county <- c("Montgomery", "Robertson", "Sumner", 
-               "Cheatham",   "Davidson",  "Wilson",
-               "Dickson",    "Williamson", "Rutherford")
-
-facet_map <- 
-  tribble(
-    ~name,        ~row, ~col,  ~code,
-    "Montgomery",   1,    1,   "Montgomery",
-    "Robertson",    1,    2,   "Robertson",
-    "Sumner",       1,    3,   "Sumner",
-    "Cheatham",     2,    1,   "Cheatham",
-    "Davidson",     2,    2,   "Davidson",
-    "Wilson",       2,    3,   "Wilson",
-    "Dickson",      3,    1,   "Dickson",
-    "Williamson",   3,    2,   "Williamson",
-    "Rutherford",   3,    3,   "Rutherford",
-  )
-
-#my_county <- c("Cheatham")
-#
-#facet_map <- 
-#  tribble(
-#    ~name,        ~row, ~col,  ~code,
-#    "Cheatham",     1,    1,   "Cheatham",
-#  )
-
-
-
+### Choose the countys you want to add to the facet graph
+my_county <- c("Cheatham")
 
 data <-
   county_new_df %>% 
   select(DATE, COUNTY, NEW_CASES) %>% 
   filter(DATE >= as.Date("2021-03-01")) %>%
-  mutate(COUNTY = ifelse(COUNTY == "Dekalb", "DeKalb", COUNTY)) %>%
   filter(COUNTY %in% my_county) %>%
   filter(!is.na(NEW_CASES)) %>%
   rename(dates = DATE, county = COUNTY, I = NEW_CASES) %>%
   mutate(I = if_else(I < 0, 0, I)) %>%
   filter(dates >= as.Date("2021-03-01")) %>%
   arrange(dates)
-
 
 ### Serial Interval estimates from:
 ### https://wwwnc.cdc.gov/eid/article/26/6/20-0357_article
@@ -114,8 +69,6 @@ for (this_county in data %>% pull("county") %>% unique()) {
 trend_tib <-
   Rt_tib %>%
   select(dates, county, mean_r) %>% 
-  arrange(dates, county) %>%
-  unique() %>%
   mutate(county = paste("values:", county, sep = "")) %>%
   pivot_wider(id_cols = "dates", 
               names_from = "county", 
@@ -129,34 +82,44 @@ trend_tib <-
   pivot_longer(-dates, names_to = "county", values_to = "trend")
 
 
-### Add our trend data to the Rt tibble
+### Add our trend and mask mandate data to the Rt tibble
 Rt_tib <-
   Rt_tib %>%
-  left_join(trend_tib, by = c("dates" = "dates", "county" = "county")) 
+  left_join(trend_tib, by = c("dates" = "dates", "county" = "county")) %>%
+  left_join(data %>% select(-county), by = "dates") %>%
+  mutate(county = paste("Rt estimate - Cheatham Co. All Ages -", Rt_tib %>% tail(n = 1) %>% pull("dates")))
 
-### Title for our graph
-title <- "Estimate for Rt among the general population"
-subtitle <- paste("assuming mean(serial interval) = ", si_mean, 
-                  " days and std(serial interval) = ", si_std, " days", sep = "")
 
 ### Render the graph and done!
 g_rt_counties <-
   ggplot(data = Rt_tib, aes(x = as.Date(dates))) +
   theme_linedraw() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
   theme(strip.text.x = element_text(size = 16)) +
   geom_point(aes(y = mean_r), size = 1.0) + 
   geom_ribbon(aes(ymin = mean_r - std_r, 
                   ymax = mean_r + std_r),
               color = NA, fill = "darkgrey", alpha = 0.2) +
-  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2) +
+  
+  geom_line(aes(y = trend), color = "firebrick4", size = 1.2) +
   geom_hline(yintercept = 1, linetype = "dashed") + 
   scale_y_continuous(limits = c(0, 2)) +
-  facet_geo(~ county, grid = facet_map) + 
-  labs(title = title, x = "", y = "Rt")
+  facet_wrap(~ county) +
+  labs(title = "", x = "", y = "Rt")
 print(g_rt_counties)
 
-g_rt_combined <-
-  plot_grid(g_rt_counties, g_rt_schools,
-          nrow = 1, ncol = 2, align = "hv")
-print(g_rt_combined)
+g_num_counties <- 
+  g_num <-
+  ggplot(data = data %>% filter(dates >= as.Date("2021-06-08")), aes(x = as.Date(dates))) +
+  theme_linedraw() +
+  theme(strip.text.x = element_text(size = 12)) +
+  geom_bar(stat = "identity", aes(y = I), size = 1.0, color = "firebrick4", fill = "firebrick4") + 
+  labs(title = "", x = "", y = "New Cases/Day")
+print(g_num_schools)
 
+g_county <- plot_grid(g_rt_counties, g_num_counties, nrow = 2, ncol = 1, align = "hv", rel_heights = c(1, 0.4))
+print(g_county)
+
+plot_grid(g_county, g_schools, nrow = 1, ncol = 2, align = "hv")

@@ -35,8 +35,7 @@ us_data <-
 
 data <- data %>% bind_rows(us_data)
 
-
-
+# Process data (turn total cases/deaths -> new cases/deaths, 7-day MA)
 data <-
   data %>%
   select(date, state, cases, deaths) %>% 
@@ -48,8 +47,15 @@ data <-
   # Use diff() to turn total cases/deaths into new cases/deaths
   mutate(across(-date, ~ . - lag(.))) %>%
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>% 
-  mutate(`cases_Washington` = if_else(date == as.Date("2020-01-21"), 1, `cases_Washington`)) %>%
   
+  # Filter out "blips" in the data where states suddenly revise the number of cases/deaths
+  mutate(`deaths_Delaware`  = ifelse(date == as.Date("2021-07-30"), 0, `deaths_Delaware`)) %>%
+  mutate(`deaths_Kentucky`  = ifelse(date == as.Date("2021-06-01"), 0, `deaths_Kentucky`)) %>%
+  mutate(`deaths_Nebraska`  = ifelse(date == as.Date("2021-05-28"), 0, `deaths_Nebraska`)) %>%
+  mutate(`deaths_Maryland`  = ifelse(date == as.Date("2021-05-27"), 0, `deaths_Maryland`)) %>%
+  mutate(`deaths_Oklahoma`  = ifelse(date == as.Date("2021-05-26"), 0, `deaths_Oklahoma`)) %>%
+  mutate(`cases_Washington` = ifelse(date == as.Date("2020-01-21"), 1, `cases_Washington`)) %>%
+    
   # Take the new count and do a 7-day SMA to smooth it
   mutate(across(!starts_with("date"), .fns = list(sma = ~ SMA(., n = 7)), .names = "{fn}_{col}")) %>%
   rename_at(vars(starts_with("sma_")), ~ str_replace(., "sma_", "sma")) %>% 
@@ -67,86 +73,55 @@ data <-
   filter(!state %in% c("Guam", "Northern Mariana Islands", "Virgin Islands", "Puerto Rico"))# %>%
   #filter(state %in% c("Tennessee"))
 
-### This currently graphs by states showing the highest number of cases throughout
-### the history of the pandemic.   Come back and write a smarter order function that
-### looks at just the last two weeks, as well as the trend growth (+/-) during that time.
-order_cases <-
-  data %>% 
-  filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>%
-  select(state, sma_percapita_cases) %>% 
-  group_by(state) %>% 
-  summarize(max = max(sma_percapita_cases)) %>% 
-  arrange(desc(max)) %>%
-  pull("state")
-
-order_deaths <-
-  data %>% 
-  filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>%
-  select(state, sma_percapita_deaths) %>% 
-  group_by(state) %>% 
-  summarize(max = max(sma_percapita_deaths)) %>% 
-  arrange(desc(max)) %>%
-  pull("state")
-
-data_cases <-
-  data %>% 
-  select(date, state, cases, percapita_cases, sma_percapita_cases) %>%
-  mutate(state = fct_relevel(state, order_cases))
-
-data_deaths <-
-  data %>% 
-  select(date, state, deaths, percapita_deaths, sma_percapita_deaths) %>%
-  mutate(state = fct_relevel(state, order_deaths))
-
-us_deaths_avg <- data_deaths %>% filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>% filter(state == "United States") %>% pull("sma_percapita_deaths")
-us_cases_avg  <- data_cases  %>% filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>% filter(state == "United States") %>% pull("sma_percapita_cases")
+us_deaths_avg <- data %>% filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>% filter(state == "United States") %>% pull("sma_percapita_deaths")
+us_cases_avg  <- data %>% filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>% filter(state == "United States") %>% pull("sma_percapita_cases")
 
 color_cases <-
-  data_cases %>% 
+  data %>% 
   filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>% 
   select(state, sma_percapita_cases) %>%
-  mutate(fillcolor = if_else(sma_percapita_cases < us_cases_avg, "green", "red")) %>%
-  mutate(fillcolor = if_else(state == "United States", "blue", fillcolor)) %>%
-  select(state, fillcolor)
+  mutate(fillcolor_cases = if_else(sma_percapita_cases < us_cases_avg, "green", "red")) %>%
+  mutate(fillcolor_cases = if_else(state == "United States", "blue", fillcolor_cases)) %>%
+  select(state, fillcolor_cases)
 
 color_deaths <-
-  data_deaths %>% 
+  data %>% 
   filter(date == data %>% arrange(date) %>% tail(n = 1) %>% pull(date)) %>% 
   select(state, sma_percapita_deaths) %>%
-  mutate(fillcolor = if_else(sma_percapita_deaths < us_deaths_avg, "green", "red")) %>%
-  mutate(fillcolor = if_else(state == "United States", "blue", fillcolor)) %>%
-  select(state, fillcolor)
+  mutate(fillcolor_deaths = if_else(sma_percapita_deaths < us_deaths_avg, "green", "red")) %>%
+  mutate(fillcolor_deaths = if_else(state == "United States", "blue", fillcolor_deaths)) %>%
+  select(state, fillcolor_deaths)
 
-data_cases  <- data_cases  %>% left_join(color_cases,  by = "state")
-data_deaths <- data_deaths %>% left_join(color_deaths, by = "state")
+data <- 
+  data %>%
+  left_join(color_cases, by = "state") %>% 
+  left_join(color_deaths, by = "state")
+
+us_cases  <- data %>% filter(state == "United States") %>% tail(n = 1) %>% pull("sma_percapita_cases")
+us_deaths <- data %>% filter(state == "United States") %>% tail(n = 1) %>% pull("sma_percapita_deaths")
 
 g_excess_cases <-
-  ggplot(data = data_cases %>% filter(!state %in% c("United States", "District of Columbia"))) + 
+  ggplot(data = data %>% filter(!state %in% c("United States", "District of Columbia"))) + 
   theme_bw() +
   theme(legend.title = element_blank()) +
   theme(legend.position = "none") +
   geom_hline(yintercept = 0, col = "gray") +
-  geom_area(aes(x = as.Date(date) - days(3), y = sma_percapita_cases, fill = fillcolor), color = "black", size = 0.1) + 
-  #geom_area(aes(x = date, y = percapita_cases), fill = "orange", color = NA)  +
-  #geom_line(aes(x = as.Date(date) - days(3), y = sma_percapita_cases), linetype = "dotted") + 
+  geom_area(aes(x = as.Date(date) - days(3), y = sma_percapita_cases, fill = fillcolor_cases), color = "black", size = 0.1) + 
   facet_geo(~ state, grid = us_state_grid1 %>% filter(!name == "District of Columbia")) + 
-  #facet_wrap(~ state, ncol = 10) +
   scale_fill_manual(values = c("red" = "firebrick2", "green" = "seagreen4", "blue" = "steelblue2")) + 
   labs(title = paste("New Cases per Capita - ", data %>% arrange(date) %>% tail(n = 1) %>% pull(date)), x = "Date", y = "") +
   scale_y_continuous(labels = scales::percent)
 print(g_excess_cases)
 
 g_excess_deaths <-
-  ggplot(data = data_deaths %>% filter(!state %in% c("United States", "District of Columbia"))) + 
+  ggplot(data = data %>% filter(!state %in% c("United States", "District of Columbia"))) + 
   theme_bw() +
   theme(legend.title = element_blank()) +
   theme(legend.position = "none") +
   geom_hline(yintercept = 0, col = "gray") +
-  geom_area(aes(x = as.Date(date) - days(3), y = sma_percapita_deaths, fill = fillcolor), color = "black", size = 0.1) + 
+  geom_area(aes(x = as.Date(date) - days(3), y = sma_percapita_deaths, fill = fillcolor_deaths), color = "black", size = 0.1) + 
   scale_fill_manual(values = c("red" = "firebrick2", "green" = "seagreen4", "blue" = "steelblue2")) + 
   facet_geo(~ state, grid = us_state_grid1 %>% filter(!name == "District of Columbia")) + 
-  #facet_wrap(~ state, ncol = 10) +
   labs(title = paste("New Deaths per Capita - ", data %>% arrange(date) %>% tail(n = 1) %>% pull(date)), x = "Date", y = "") +
   scale_y_continuous(labels = scales::percent)
-print(g_excess_deaths)
-
+#print(g_excess_deaths)

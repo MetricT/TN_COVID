@@ -14,7 +14,7 @@ new_active_percapita_last7 <-
   select(-Date, -Total) %>%
   gather() %>%
   group_by(key) %>%
-  summarize(new_active_last7 = sum(value)) %>%
+  summarize(new_active_last7 = sum(value, na.rm = TRUE)) %>%
   rename(County = key)
 
 this_map <-

@@ -64,7 +64,7 @@ read_excel_url <- function(url, ...) {
 }
 
 ### Cache this because loading the spreadsheets is slowwwwww.....
-if (!exists("data_loaded")) {
+#if (!exists("data_loaded")) {
 
   ### URL's for the spreadsheets
   url_root <- "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/Public-Dataset-"
@@ -124,24 +124,31 @@ if (!exists("data_loaded")) {
   
   vac_url_root <- "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/"
   vaccine_age_url <- paste(vac_url_root, "COVID_VACCINE_COUNTY_AGE_GROUPS_CENSUS.XLSX", sep = "")
+  vaccine_age_df_raw <- 
+    read_excel_url(vaccine_age_url, col_types = c("date", "text", "text", "numeric", "numeric", "numeric"))
+  
   vaccine_age_df <- 
-    read_excel_url(vaccine_age_url) %>%
+    vaccine_age_df_raw %>%
     mutate(DATE = as.Date(DATE)) %>%
     pivot_wider(id_cols = c("DATE", "PATIENT_COUNTY"), 
                 names_from = "AGE_GROUP_CENSUS", 
-                values_from = "RECIPIENT_COUNT") %>% 
-    janitor::clean_names() %>% 
-    mutate_if(is.numeric, ~ (replace_na(., 0))) %>%
-    mutate(`x85+` = x85_89 + x90_94 + x95_99 + x100) %>%
-    select(-x100, -x85_89, -x90_94, -x95_99, -pending) %>%
-    pivot_longer(-c(date, patient_county), 
-                 names_to = "Age", 
-                 values_to = "Count") %>%
-    filter(!patient_county %in% c("OUT OF STATE")) %>%
-    mutate(Age = gsub("x", "", Age), Age = gsub("_", "-", Age)) %>%
-    rename(County = patient_county,
-           Date = date)
-  
+                names_sep = ":",
+                values_from = c("RECIPIENT_COUNT", "RECIP_FULLY_VACC", "RECIP_ADDL_DOSE")) %>%
+    mutate(
+      `RECIPIENT_COUNT:85+`  =  `RECIPIENT_COUNT:85-89` +  `RECIPIENT_COUNT:90-94` +  `RECIPIENT_COUNT:95-99`  + `RECIPIENT_COUNT:100+`,
+      `RECIP_FULLY_VACC:85+` = `RECIP_FULLY_VACC:85-89` + `RECIP_FULLY_VACC:90-94` + `RECIP_FULLY_VACC:95-99` + `RECIP_FULLY_VACC:100+`,
+      `RECIP_ADDL_DOSE:85+`  =  `RECIP_ADDL_DOSE:85-89` +  `RECIP_ADDL_DOSE:90-94` +  `RECIP_ADDL_DOSE:95-99`  + `RECIP_ADDL_DOSE:100+`
+    ) %>%
+    select(-ends_with(c("_85-89", "_90-94", "_95-99", "100+"))) %>%
+    pivot_longer(-c(DATE, PATIENT_COUNTY),
+                 names_sep = ":",
+                 names_to = c("Type", "Age")) %>%
+    pivot_wider(id_cols = c("DATE", "PATIENT_COUNTY", "Age"),
+                names_from = "Type", values_from = "value") %>%
+    filter(!PATIENT_COUNTY %in% c("OUT OF STATE")) %>%
+    rename(Date = DATE, County = PATIENT_COUNTY) #%>%
+    #mutate_if(is.numeric, ~ (replace_na(., 0)))
+
   
   ################################################################################
   ### Cleaning the state's data...
@@ -162,7 +169,7 @@ if (!exists("data_loaded")) {
   ### data, no fancy patch
   
   #data_loaded <- 1
-}
+#}
 
 
 ################################################################################
@@ -258,7 +265,7 @@ county_acs <-
           variables   = c("B01003_001"),
           state       = c("47"),
           county      = map_counties_fips %>% as_vector(),
-          year        = 2018,
+          year        = 2019,
           geometry    = TRUE,
           cache_table = TRUE) %>%
   rename(POP2018 = estimate) %>%
@@ -707,7 +714,7 @@ counties$nudge_y[counties$County == "Moore"]     <-  0.015
 
 
 
- ################################################################################
+################################################################################
 ### Load maps
 ################################################################################
 #source("maps/new_active_percapita_last7.R")   # New active per capita last 7
@@ -750,9 +757,10 @@ source("graphs/new_active.R")                # New active
 source("graphs/new_deaths.R")                # New deaths
 source("graphs/new_cases.R")                 # New confirmed cases
 source("graphs/barchart_ages.R")             # Bar chart for age
-source("graphs/new_hospitalized.R")          # New hospitalized
+#source("graphs/new_hospitalized.R")          # New hospitalized
 source("graphs/new_tests_perday.R")          # New tests per day
 source("graphs/new_positive_test_rate.R")    # Positive test rate
+source("graphs/special_image.R")
 
 ################################################################################
 ### Arrange the graphs into the final infographic
@@ -772,7 +780,7 @@ footer_string <- paste("SMA = 7-day Simple Moving Average\n",
                        "https://www.tn.gov/health/cedep/ncov.html", sep = "")
 
 grob_charts <-
- plot_grid(graph_new_positive_test_rate, graph_new_tests_perday,  graph_new_hospital,  graph_age_cases,    graph_age_deaths,
+ plot_grid(graph_new_positive_test_rate, graph_new_tests_perday,  NA,  graph_age_cases,    graph_age_deaths,
            graph_new_cases,              graph_new_deaths,        graph_new_active,    graph_total_active, graph_new_vaccine,
           ncol = 5, nrow = 2, align = "hv")
 
@@ -818,3 +826,4 @@ height <- round(900 * scale)
 png("TN_COVID_Viridis.png", width = width, height = height)
 plot(final)
 dev.off()
+

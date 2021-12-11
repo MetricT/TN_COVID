@@ -59,7 +59,8 @@ data <-
   pivot_longer(-date, names_to = "state", values_to = "new_cases") %>%
   left_join(pop2018, by = c("state" = "state")) %>%
   mutate(new_cases_percapita = 100000 * new_cases / POP2018) %>%
-  select(date, state, state_abbr, new_cases_percapita)
+  select(date, state, state_abbr, new_cases_percapita) %>%
+  filter(date >= as.Date("2021-05-01"))
 
 
 ### Add dot to the end of the line for reference

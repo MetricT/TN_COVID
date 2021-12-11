@@ -1,5 +1,5 @@
 ################################################################################
-### Compute Rt (the reproduction number) for the given counties and populations
+### Compute Rt (the reproduction number) for the given locations and populations
 ################################################################################
 
 ### Load the necessary libraries
@@ -13,57 +13,13 @@ invisible(lapply(packages, "library", quietly = TRUE,
 
 ### Choose the counties you want to add to the facet graph.  They will also graph
 ### in this order, so arrange them how you want.
-
-### If you want to do every county in the state
-my_county <- 
-  total_cases_tib %>% 
-  pivot_longer(-Date, names_to = "County", values_to = "Value") %>% 
-  select(County) %>% 
-  filter(!County %in% c("Total", "Pending", "Out of State")) %>% 
-  mutate(County = ifelse(County == "Dekalb", "DeKalb", County)) %>%
-  unique() %>% 
-  pull()
-
-facet_map <- 
-  us_tn_counties_grid1 %>% 
-  mutate(name = if_else(name == "Dekalb", "DeKalb", name),
-         code = if_else(code == "Dekalb", "DeKalb", code))
-
-### Counties centered on Davidson
-my_county <- c("Montgomery", "Robertson", "Sumner", 
-               "Cheatham",   "Davidson",  "Wilson",
-               "Dickson",    "Williamson", "Rutherford")
-
-
-facet_map <- 
-  tribble(
-    ~name,        ~row, ~col,  ~code,
-    "Montgomery",   1,    1,   "Montgomery",
-    "Robertson",    1,    2,   "Robertson",
-    "Sumner",       1,    3,   "Sumner",
-    "Cheatham",     2,    1,   "Cheatham",
-    "Davidson",     2,    2,   "Davidson",
-    "Wilson",       2,    3,   "Wilson",
-    "Dickson",      3,    1,   "Dickson",
-    "Williamson",   3,    2,   "Williamson",
-    "Rutherford",   3,    3,   "Rutherford",
-  )
-
-#my_county <- c("Cheatham")
-
-#facet_map <- 
-#  tribble(
-#    ~name,        ~row, ~col,  ~code,
-#    "Cheatham",     1,    1,   "Cheatham",
-#  )
-
-
+my_location <- c("Cheatham")
 
 ################################################################################
 ### Fetching data.   The EpiEstim::estimate_R() function expects to be handed a
 ### data.frame or tibble with two columns:   "dates" (date of confirmed case)
-### and "I" (number of new incidents/cases).   I add a third column "county"
-### so I can make facet graphs of multiple counties at once.
+### and "I" (number of new incidents/cases).   I add a third column "location"
+### so I can make facet graphs of multiple locations at once.
 ################################################################################
 
 ### The TN Dept of Health maintains a separate spreadsheet of confirmed cases for
@@ -77,6 +33,41 @@ read_excel_url <- function(url, ...) {
   return(readxl::read_excel(tf, ...))
 }
 
+###  Alternative way of collecting data, not used right now
+#data <- 
+#  age_by_county_df %>%
+#  filter(AGE_GROUP %in% c("0-10 years", 
+#                          "11-20 years")) %>% 
+#  group_by(DATE, COUNTY) %>% 
+#  summarize(I = sum(CASE_COUNT)) %>%
+#  ungroup() %>%
+#  rename(dates = DATE,
+#         location = COUNTY) %>%
+#  
+#  ### The data above is total case count.   Pivot and compute new case count
+#  pivot_wider(id_cols = "dates", names_from = "location", values_from = "I") %>%
+#  mutate(across(!starts_with("dates"),
+#                .fns = list(new = ~ c(0, diff(.))),
+#                .names = "{fn}_{col}"
+#  )) %>%
+#  select(dates, starts_with("new_")) %>%
+#  rename_at(vars(starts_with("new_")),
+#            ~ str_replace(., "new_", "")) %>%
+#  pivot_longer(-dates, names_to = "location", values_to = "I") %>%
+#  
+#  # Filter it to just the locations specified
+#  filter(location %in% my_location) %>%
+#  
+#  # Filter out cases where "I" is a NA
+#  filter(!is.na(I)) %>%
+#  
+#  # Also, estimate_R can't handle negative numbers, so set negative values to 0.
+#  # These are usually due to suspected cases being lumped in and subsequently 
+#  # found to not be COVID.
+#  mutate(I = if_else(I < 0, 0, I)) %>%
+#  filter(date >= as.Date("2020-07-01"))
+
+
 ### Load case data for schools
 data <-
   "https://www.tn.gov/content/dam/tn/health/documents/cedep/novel-coronavirus/datasets/Public-Dataset-Daily-County-Cases-5-18-Years.XLSX" %>%
@@ -86,14 +77,13 @@ data <-
   filter(DATE >= as.Date("2021-06-01")) %>%
   rename(dates    = DATE,
          I        = NEW_CASES,
-         county = COUNTY) %>%
+         location = COUNTY) %>%
   
   arrange(dates) %>%
   unique() %>%
   
-  # Filter it to just the counties specified
-  mutate(county = ifelse(county == "Dekalb", "DeKalb", county)) %>%
-  filter(county %in% my_county) %>%
+  # Filter it to just the locations specified
+  filter(location %in% my_location) %>%
   
   # Filter out cases wh#ere "I" is a NA
   filter(!is.na(I)) %>%
@@ -118,17 +108,17 @@ si_std  <- 4.75
 ### Create a blank tibble to hold our EpiEstim output
 Rt_tib <-
   tribble(
-    ~dates, ~mean_r, ~std_r, ~county,
+    ~dates, ~mean_r, ~std_r, ~location,
   )
 
-### Iterate over all counties and generate the EpiEstim estimate for Rt
-for (this_county in data %>% pull("county") %>% unique()) {
+### Iterate over all locations and generate the EpiEstim estimate for Rt
+for (this_location in data %>% pull("location") %>% unique()) {
   
-  print(this_county)
+  print(this_location)
   
   data_subset <-
     data %>%
-    filter(county == this_county) %>%
+    filter(location == this_location) %>%
     select(dates, I)
   
   estimate <- 
@@ -145,7 +135,7 @@ for (this_county in data %>% pull("county") %>% unique()) {
     bind_cols(e_values) %>% 
     janitor::clean_names() %>% 
     rename(dates = value) %>%
-    mutate(county = this_county)
+    mutate(location = this_location)
   
   Rt_tib <-
     Rt_tib %>%
@@ -153,56 +143,81 @@ for (this_county in data %>% pull("county") %>% unique()) {
   
 }
 
-### Take the Rt_tib estimates and compute mstl() trends
+### Take the Rt_tib estimates and compute the 7-day moving average
 trend_tib <-
   Rt_tib %>%
-  select(dates, county, mean_r) %>% 
-  arrange(dates, county) %>%
-  unique() %>%
-  mutate(county = paste("values:", county, sep = "")) %>%
+  select(dates, location, mean_r) %>% 
+  mutate(location = paste("values:", location, sep = "")) %>%
   pivot_wider(id_cols = "dates", 
-              names_from = "county", 
+              names_from = "location", 
               values_from = "mean_r") %>%
+  
+  # Use mstl() %>% trendcyle()
   mutate(across(starts_with("values:"),
                 .fns = list(trend = ~ (.) %>% ts() %>% mstl() %>% trendcycle()),
                 .names = "{fn}_{col}")) %>%
+
+  # Use SMA
+  #mutate(across(starts_with("values:"),
+  #              .fns = list(trend = ~ (.) %>% SMA(n = 7)),
+  #              .names = "{fn}_{col}")) %>%
+  #mutate(dates = as.Date(dates) - 3) %>%
+  
+  
   select("dates", starts_with("trend_values")) %>%
   rename_at(vars(starts_with("trend_values:")),
             ~ str_replace(., "trend_values:", "")) %>%
-  pivot_longer(-dates, names_to = "county", values_to = "trend")
+  pivot_longer(-dates, names_to = "location", values_to = "trend")
 
 
-### Add our trend data to the Rt tibble
+### Add our trend and mask mandate data to the Rt tibble
 Rt_tib <-
   Rt_tib %>%
-  left_join(trend_tib, by = c("dates" = "dates", "county" = "county")) 
+  left_join(trend_tib, by = c("dates" = "dates", "location" = "location")) #%>%
+  #left_join(start_dates, by = c("location" = "county"))
 
 
 ################################################################################
 ### Render the graph and done
 ################################################################################
-### Title for our graph
-title <- paste("Estimated Rt among children ages 5-18 - ", 
-               Rt_tib %>% tail(n = 1) %>% pull("dates"), sep = "")
-
-subtitle <- paste("assuming mean(serial interval) = ", si_mean, 
-                  " days and std(serial interval) = ", si_std, " days", sep = "")
+Rt_tib <- 
+  Rt_tib %>% 
+  left_join(data %>% select(-location), by = "dates") %>%
+  mutate(location = paste("Rt estimate - ", my_location, " Co. Ages 5-18 -", Rt_tib %>% tail(n = 1) %>% pull("dates")))
 
 g_rt_schools <-
   ggplot(data = Rt_tib, aes(x = as.Date(dates))) +
   theme_linedraw() +
-  theme(strip.text.x = element_text(size = 12)) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  theme(strip.text.x = element_text(size = 16)) +
   geom_point(aes(y = mean_r), size = 1.0) + 
   geom_ribbon(aes(ymin = mean_r - std_r, 
                   ymax = mean_r + std_r),
               color = NA, fill = "darkgrey", alpha = 0.2) +
-  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2) +
+  
+  geom_line(aes(y = trend), color = "firebrick4", size = 1.2) +
+  
   geom_hline(yintercept = 1, linetype = "dashed") + 
-  facet_wrap(~county) + 
-  facet_geo(~ county, grid = facet_map) +
+  
+  #geom_vline(aes(xintercept = as.Date(first_day)), linetype = "dotted") +
+ 
+  facet_wrap(~location) + 
    
   scale_y_continuous(limits = c(0, 2)) +
   
-  labs(title = title, x = "", y = "Rt")
+  labs(title = "", x = "", y = "Rt")
 print(g_rt_schools)
 
+g_num_schools <- 
+  ggplot(data = data %>% filter(dates >= as.Date("2021-06-08")), aes(x = as.Date(dates))) +
+  theme_linedraw() +
+  theme(strip.text.x = element_text(size = 12)) +
+  geom_bar(stat = "identity", aes(y = I), size = 1.0, color = "firebrick4", fill = "firebrick4") + 
+
+  labs(title = "", x = "", y = "New Cases/Day")
+print(g_num_schools)
+
+g_schools <- plot_grid(g_rt_schools, g_num_schools, nrow = 2, ncol = 1, align = "hv", rel_heights = c(1, 0.4))
+print(g_schools)

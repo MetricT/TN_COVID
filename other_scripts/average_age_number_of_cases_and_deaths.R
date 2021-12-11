@@ -176,8 +176,8 @@ model_new_cases_age %>% autoplot()
 
 model_new_deaths_age <-
   new_deaths_tib %>%
-#  model(STL(avg_age ~ trend())) %>%
-  model(STL(avg_age ~ trend(window = 21))) %>%
+  model(STL(avg_age ~ trend())) %>%
+  #model(STL(avg_age ~ trend(window = 21))) %>%
   components()
 
 model_new_deaths_age %>% autoplot()

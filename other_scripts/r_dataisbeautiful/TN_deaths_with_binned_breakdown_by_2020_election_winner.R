@@ -323,23 +323,25 @@ print(g_deaths_stacked_per)
 ### Put it all together
 ################################################################################
 
+### What's the highest value in the data
+y_max <- data %>% select(date, values) %>% filter(!is.na(values)) %>% group_by(date) %>% summarize(values = sum(values)) %>% pull("values") %>% max()
+
 g_final_deaths <-
   g_deaths_stacked + 
   annotation_custom(ggplotGrob(g_deaths_stacked_per), 
-                               xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 350, 
-                               xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 350 + 150, 
-                               ymin = 130,
-                               ymax = 60) +
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 340,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 340 + 180,
+                    ymin = 60,
+                    ymax = y_max) +
   annotation_custom(ggplotGrob(g_map_tn_regions_deaths), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 120,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 120 + 150, 
-                    ymin = 80,
-                    ymax = 150) + 
-
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 100,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 100 + 185, 
+                    ymin = 85,
+                    ymax = y_max) + 
   annotation_custom(ggplotGrob(g_regional_curves_deaths), 
-                  xmin = as.Date(data %>% head(n = 1) %>% pull("date"))  + 0,
-                  xmax = as.Date(data %>% head(n = 1) %>% pull("date"))  + 0 + 100, 
-                  ymin = 10,
-                  ymax = 130)
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 0,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 0 + 100, 
+                    ymin = 11,
+                    ymax = y_max)
 print(g_final_deaths)
 

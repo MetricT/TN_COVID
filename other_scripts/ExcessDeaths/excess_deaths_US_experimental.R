@@ -1,31 +1,35 @@
-# Largely based on technique from:  https://robjhyndman.com/hyndsight/excess-deaths/
+################################################################################
+### Pull mortality data from the CDC and graph excess death - /u/MetricT
+################################################################################
 
-library(dplyr)
-library(tidyr)
-library(ggplot2)
+library(tidyverse)
 library(janitor)
 library(cowplot)
 library(lubridate)
 library(tidycensus)
-
-### Data on finalized (2014-2018) and provisional (2019-2020) all-causes death counts
-finalized_ss   <- readr::read_csv("https://data.cdc.gov/api/views/3yf8-kanr/rows.csv?accessType=DOWNLOAD")
-provisional_ss <- readr::read_csv("https://data.cdc.gov/api/views/muzy-jte6/rows.csv?accessType=DOWNLOAD")
-
-### Take the data, clean the names up a bit, and pick the columns we want
-finalized <-
-  finalized_ss %>%
-  janitor::clean_names() %>%
-  select("jurisdiction_of_occurrence", "mmwr_year", "mmwr_week", "all_cause")
-
-provisional <-
-  provisional_ss %>%
-  janitor::clean_names() %>%
-  select("jurisdiction_of_occurrence", "mmwr_year", "mmwr_week", "all_cause")
+library(tsibble)
+library(geofacet)
+library(zoo)
+library(forecast)
+library(broom)
 
 
-### Take the finalized and provisional data, stack them together, 
-### and rename the rows to shorter names
+# Install your Census API key
+# You can request one at https://api.census.gov/data/key_signup.html
+# census_api_key("<YOUR_CENSUS_API_KEY_HERE>", install = TRUE)
+
+
+# Load data on finalized (2014-2018) and provisional (2019-2020) mortality
+finalized_ss   <- read_csv("https://data.cdc.gov/api/views/3yf8-kanr/rows.csv?accessType=DOWNLOAD")
+provisional_ss <- read_csv("https://data.cdc.gov/api/views/muzy-jte6/rows.csv?accessType=DOWNLOAD")
+
+
+# Take the data and clean it up a bit
+finalized   <- finalized_ss   %>% clean_names() %>% select("jurisdiction_of_occurrence", "mmwr_year", "mmwr_week", "all_cause")
+provisional <- provisional_ss %>% clean_names() %>% select("jurisdiction_of_occurrence", "mmwr_year", "mmwr_week", "all_cause")
+
+
+# Combine both datasets and filter the subset of states we want to look at
 deaths <-
   finalized %>%
   bind_rows(provisional) %>%
@@ -33,191 +37,130 @@ deaths <-
          week = mmwr_week,
          deaths = all_cause,
          state = jurisdiction_of_occurrence) %>%
-  mutate(yearweek = yearweek(date_decimal(year + (week - 1)/52))) %>%
-  
-  ### Comment out the line below to get graphs for all 50 states
-  filter(state %in% c("United States", "Tennessee")) %>%
-  #filter(state %in% c("United States", "Tennessee", "Kentucky", "North Carolina", "Georgia", "Alabama", "Mississipi", "Arkansas")) %>%
-  #filter(state %in% c("Tennessee")) %>%
-  #filter(state %in% c("United States")) %>%
-  
-  mutate(thisyear = (year >= 2020)) %>%
-  group_by(state, year) %>%
 
-  ### Filter out the first week in 2014, as it appears to be a huge outlier
-  filter(!(year == 2014 & week == 1)) %>%
+  # Quick hack to remove "week 53" in 2014 because yearweek() can't handle it
+  filter(week != 53) %>%
 
-  ### Also filter out the most recent two weeks worth of data as the provisional
-  ### data it is based on as:
-  ###
-  ### "Last available weeks (not just lastone) are incomplete, and therefore,
-  ###  the user need to be extremely cautious about it. The share of
-  ###  incompleteness changes slightly every week. "
-  ###
-  ### https://www.mortality.org/Public/STMF_DOC/STMFmetadata.pdf
-  filter(!(year >= 2020 & week %in% seq(max(week) - 2, max(week)))) #%>%
-  
-  ### West Virginia and North Carolina are especially slow about reporting mortality
-  ### numbers, so knock off an additional two weeks for those states
+  # Add New York + New York City together (don't know why they do it this way)
+  pivot_wider(id_cols = c("year", "week"), names_from = "state", values_from = "deaths") %>%
+  mutate(NewYorkAll = `New York` + `New York City`) %>%
+  select(-`New York`, -`New York City`) %>%
+  rename(`New York` = NewYorkAll) %>%
+  pivot_longer(-c("year", "week"), names_to = "state", values_to = "deaths") %>%
 
-  ### Add this when you have time
+  # Turn the year and week into a yearweek() datatype
+  mutate(yearweek = yearweek(date_decimal(year + (week - 1) / 52))) %>%
 
-deaths_mod_us <-
+  # Uncomment the line appropriate for the states you want to analyze
+  # I may need to combine New York + New York City, but won't know until done
+  # Also may need to remove the last two weeks of data for some state since
+  # they're late with their mortality data
+  #   filter(row_number() <= n() - 2) %>%
+
+  #filter(state %in% c("Tennessee")) # <- Just Tennessee
+  filter(!state %in% c("United States", "Puerto Rico")) # <- The entire US
+
+
+# What is the latest date available
+last_date <-
   deaths %>%
-  filter(state == "United States") %>%
-  select(yearweek, deaths) %>%
-  as_tsibble(index = "yearweek") %>%
-  model(STL(deaths ~ season(period = "1 year"))) %>%
-  components()
+  arrange(yearweek) %>%
+  tail(n = 1) %>%
+  pull(yearweek) %>%
+  as.Date()
 
-
-ggplot(data = deaths, aes(x = yearweek)) + 
-  theme_bw() + 
-  geom_line(aes(y = deaths)) +
-  facet_wrap(~state, scales = "free_y")
-
-
-
-### Recombine NY & NYC
-deaths_non_ny <-
+# Model deaths and extract the seasonally-adjusted deaths
+deaths_mod <-
   deaths %>%
-  filter(!grepl("New York", state))
+  select(yearweek, state, deaths) %>%
+  mutate(state = paste("state:", state, sep = "")) %>%
+  pivot_wider(id_cols = "yearweek", names_from = "state", values_from = "deaths") %>%
 
-deaths_ny <-
-  deaths %>%
-  filter(grepl("New York", state)) %>%
-  group_by(year, week, thisyear) %>%
-  summarize(deaths = sum(deaths)) %>%
-  mutate(state = "New York") %>%
-  select(state, year, week, deaths, thisyear)
+  # Convert to a tsibble and fill in gaps by interpolation
+  as_tsibble() %>%
+  fill_gaps() %>%
+  mutate_if(is.numeric, ~ na.locf(.)) %>%
 
-deaths <-
-  deaths_non_ny %>%
-  bind_rows(deaths_ny) %>%
-  arrange(state)
-
-### Create a graph of weekly deaths by state
-g_weekly_deaths <-
-  ggplot(data = deaths, aes(x = week, y = deaths, group = year)) +
-  theme_bw() +
-  geom_line(aes(col = thisyear)) +
-  facet_wrap(~ state, scales = "free_y") +
-  scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
-  guides(col = "none") +
-  ggtitle("Weekly deaths") +
-  labs(x = "Week", y = "") +
-  geom_hline(yintercept = 0, col = "gray") +
-  scale_y_continuous(labels = scales::comma, limits = c(0, 80000))
-print(g_weekly_deaths)
+  # Take the raw data and compute the seasonally-adjusted value
+  mutate(across(starts_with("state:"),
+                   .fns = list(trend = ~ (.) %>% ts() %>% mstl() %>% seasadj()),
+                   .names = "{fn}_{col}")) %>%
+  select("yearweek", starts_with("trend_state")) %>%
+  rename_at(vars(starts_with("trend_state:")), ~ str_replace(., "trend_state:", "")) %>%
+  pivot_longer(-yearweek, names_to = "state", values_to = "deaths_seas_adj")
 
 
-### How current is the data?   Shows the lag in weeks
-deaths %>%
-  filter(year >= 2020) %>%
-  group_by(state) %>%
-  summarise(last_week = max(week)) %>%
-  mutate(
-    current_week = lubridate::week(Sys.Date()),
-    lag = current_week - last_week
-  ) %>%
-  data.frame()
+# Compute a least-squares regression of the seasonally-adjusted data from
+# 2014-2019 so we can subtract off the population growth term
+fit_deaths <-
+  deaths_mod %>%
+  filter(yearweek < yearweek("2020-01-01")) %>%
+  mutate(state = paste("state:", state, sep = "")) %>%
+  pivot_wider(id_cols = "yearweek", names_from = "state", values_from = "deaths_seas_adj") %>%
+  mutate(decimal_date = year(yearweek) + (week(yearweek) - 1) / 52) %>%
 
-### Estimate excess deaths
-recent_deaths <- deaths %>%
-  filter(year >= 2015 & year <= 2019) %>%
-  group_by(state, week) %>%
-  summarise(median_deaths = median(deaths)) %>%
-  ungroup()
+  # Compute a linear regression so we can subtract out deaths due to growing/falling population
+  mutate(across(starts_with("state:"),
+                .fns = list(intercept  = ~ lm((.) ~ decimal_date) %>% tidy() %>% filter(term == "(Intercept)")  %>% pull("estimate")),
+                .names = "{fn}_{col}")) %>%
+  mutate(across(starts_with("state:"),
+                .fns = list(coefficient = ~ lm((.) ~ decimal_date) %>% tidy() %>% filter(term == "decimal_date") %>% pull("estimate")),
+                .names = "{fn}_{col}")) %>%
+  select(yearweek, starts_with("intercept_state"), starts_with("coefficient_state")) %>%
+  head(n = 1) %>%
+  pivot_longer(-yearweek, names_to = c("type", "state"), names_sep = "_", values_to = "value") %>%
+  as_tibble() %>%
+  select(state, type, value) %>%
+  mutate(state = gsub("^state:", "", state)) %>%
+  pivot_wider(id_cols = "state", names_from = "type", values_from = "value")
 
-excess_deaths <- deaths %>%
-  filter(year >= 2015) %>%
-  left_join(recent_deaths) %>%
-  mutate(excess = deaths - median_deaths) %>%
-  mutate(thisyear = (year >= 2020))
 
-### Get county population
+# Take the regression coefficients above, subtract off population growth, and
+# get the detrended Excess Deaths
+deaths_mod <-
+  deaths_mod %>%
+  left_join(fit_deaths, by = "state") %>%
+  mutate(decimal_date = year(yearweek) + (week(yearweek) - 1) / 52) %>%
+  mutate(pop_deaths = intercept + coefficient * decimal_date) %>%
+  mutate(detrend = deaths_seas_adj - pop_deaths)
+
+
+# Fetch county population so we can compute per capita
 pop <-
   get_acs(geography   = "state",
           variables   = c("B01003_001"),
           year        = 2019,
           geometry    = FALSE,
           cache_table = TRUE) %>%
-  rename(POP2018 = estimate,
+  rename(population = estimate,
          state   = NAME) %>%
-  select(state, POP2018) %>%
-  add_row(state   = "United States",
-          POP2018 = 326289971)
+  select(state, population)
 
-# United States - 326,289,971
-# New York City - 8,399,000
-# New York State - 11,051,000
+# Only show states we have data for
+facet_map <-
+  us_state_grid1 %>%
+  filter(name %in% (deaths %>% pull(state) %>% unique())) %>%
+  mutate(row = row - min(row) + 1,
+         col = col - min(col) + 1)
 
-excess_deaths <-
-  excess_deaths %>% 
-  left_join(pop, by = "state") %>% 
-  mutate(excess = excess / POP2018)
 
-excess_deaths_2020 <-
-  excess_deaths %>%
-  filter(year >= 2020) #%>%
-#  filter(week %in% c(37, 36))
-  #filter(week > 25)
-
-### Order graphs by the state seeing the worst impact
-us_order <- 
-  excess_deaths_2020 %>% 
-  ungroup() %>% 
-  select(state, excess) %>% 
-  group_by(state) %>%
-  summarize(max = max(excess)) %>%
-  arrange(desc(max)) %>% 
-  pull(state)
-
-excess_deaths$state <- factor(excess_deaths$state, levels = us_order)
-
-### Create a graph of weekly excess deaths by state
-g_excess_deaths <-
-  ggplot(data = excess_deaths, aes(x = week, y = excess, group = year)) +
+# Compute Excess Deaths per capita and graph
+deaths_mod %>%
+  left_join(pop, by = "state") %>%
+  mutate(detrend_capita = detrend / population) %>%
+  select(yearweek, state, detrend_capita) %>%
+  filter(yearweek >= as.Date("2020-01-01"), yearweek < as.Date("2021-07-01")) %>%
+  ggplot() +
   theme_bw() +
-  geom_hline(yintercept = 0, col = "gray") +
-  geom_line(aes(col = thisyear)) +
-  geom_vline(xintercept = week(Sys.Date()), linetype = "dotted", color = "darkred") + 
-  facet_wrap(~ state) + #, scales = "free_y") +
-  scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
-  guides(col = FALSE) +
-  ggtitle("Excess deaths") +
-  labs(x = "Week", y = "") +
-  scale_y_continuous(labels = scales::percent)
-print(g_excess_deaths)
-
-g_excess_deaths <-
-  ggplot(data = excess_deaths %>% filter(year >= 2020), aes(x = week, y = excess)) +
-  theme_bw() +
-  geom_hline(yintercept = 0, col = "gray") +
-  geom_area(fill = "orange", color = "black")  +
-  geom_vline(xintercept = week(Sys.Date()), linetype = "dotted", color = "darkred") + 
-  facet_wrap(~ state) + #, scales = "free_y") +
-  scale_color_manual(values = c("FALSE" = "gray", "TRUE" = "red")) +
-  guides(col = FALSE) +
-  ggtitle("Excess deaths by week as % of population") +
-  labs(subtitle = "Vertical dotted line represents current week.  Mortality data lags ~1 month") +
-  labs(x = "Week", y = "") +
-  scale_y_continuous(labels = scales::percent, limits = c(0, 0.0001))
-print(g_excess_deaths)
-
-### Summarize excess deaths
-excess_deaths %>%
-  filter(year >= 2020) %>%
-  group_by(state) %>%
-  summarise(
-    excess = sum(excess),
-    last_week = max(week),
-    as_at = as.Date("2020-01-01") + 7 * (last_week - 1)
-  ) %>%
-  select(state, excess, as_at) %>%
-  data.frame()
-
-plot_grid(g_weekly_deaths,
-          g_excess_deaths,
-          nrow = 1, ncol = 2, align = "hv")
-
+  geom_area(aes(x = as.Date(yearweek), y = detrend_capita), fill = "darkorange") +
+  scale_x_date(breaks = pretty_breaks(3)) +
+  scale_y_continuous(
+    limits = c(0, NA),
+    labels = scales::percent_format(accuracy = 0.001)
+    ) +
+  labs(x = "",
+       y = "",
+       title = "Excess Deaths per Capita - 2020-01-01 to 2021-06-30",
+       caption = "Mortality Data from the Centers for Disease Control"
+       ) +
+  facet_geo(~ state, grid = facet_map)

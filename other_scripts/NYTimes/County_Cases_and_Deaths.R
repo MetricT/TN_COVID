@@ -7,7 +7,7 @@ library(useful)
 my_state <- "Tennessee"
 
 ### What county are we interested in?
-my_county <- "Cheatham"
+my_county <- "Davidson"
 
 ### How much do we scale up deaths to make it visually similar in size to cases
 scale <- 80

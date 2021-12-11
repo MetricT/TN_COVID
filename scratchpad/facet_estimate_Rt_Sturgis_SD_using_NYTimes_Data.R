@@ -27,11 +27,12 @@ si_std  <- 4.75
 ### or if you want you can access it directly at:
 ### https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv
 spreadsheet <- 
-  "git/Datasets/nytimes/covid-19-data/us-counties.csv" %>%
+  "../Datasets/nytimes/covid-19-data/us-counties.csv" %>%
   read_csv(col_names = TRUE, col_types = "Dccddd") %>%
   mutate(location = paste(county, " Co., ", state, sep = "")) %>%
   filter(location %in% my_locations) %>%
-  select(date, location, cases)
+  select(date, location, cases) %>%
+  filter(date >= as.Date("2021-06-01"))
 
 ### The NY Times gives *total* cases.   Convert that to new cases,
 ### and fill in the occasional negative number with zeros.  The EpiEstim
@@ -127,16 +128,14 @@ title <- paste("Estimated Rt ",
 ################################################################################
 subset <-
   Rt_tib %>%
-  mutate(dates = decimal_date(dates)) %>%
-  filter(dates >= decimal_date(as.Date("2020-07-30"))) %>%
-  filter(dates <= decimal_date(as.Date("2020-08-05")))
+  mutate(dates = decimal_date(dates)) 
 
 fit_subset <-
   glm(trend ~ dates, data = subset)
 
 forecast_Rt <-
   tibble(
-    date = as.Date("2020-08-06") + 1:10,
+    date = as.Date("2021-08-06") + 1:10,
     forecast_r = fit_subset$coefficients[1] +
                  fit_subset$coefficients[2] * decimal_date(date)
   ) 
@@ -145,35 +144,56 @@ forecast_Rt <-
 Rt_combined <-
   Rt_tib %>%
   full_join(forecast_Rt, by = c("dates" = "date")) %>%
-  mutate(location = "Meade Co., South Dakota  [Sturgis Bike Rally 2020]")
+  mutate(location = "Meade Co., South Dakota  [Sturgis Bike Rally 2021]")
 
 ### Render the graph and done!
-g <-
-  ggplot(data = Rt_combined, aes(x = as.Date(dates))) +
+g_rt <-
+  ggplot(data = Rt_combined %>% filter(dates >= as.Date("2021-06-08")), aes(x = as.Date(dates))) +
   theme_linedraw() +
   theme(strip.text.x = element_text(size = 16)) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
   geom_point(aes(y = mean_r), size = 1.0) + 
   geom_ribbon(aes(ymin = mean_r - std_r, 
                   ymax = mean_r + std_r),
               color = NA, fill = "darkgrey", alpha = 0.2) +
   
   # Add a trend line
-  geom_line(aes(y = trend), color = "darkseagreen4", size = 1.2) +
+  geom_line(aes(y = trend), color = "firebrick4", size = 1.2) +
   
   # Add a forecast line based on linear regression
   #geom_line(aes(y = forecast_r), color = "firebrick2", size = 1.2, linetype = "dotted") +
 
   geom_hline(yintercept = 1, linetype = "dashed") + 
   
-  annotate("text", size = 4, label = "Rally Begins", x = as.Date("2020-08-06"), y = 0.5, angle = "90") +
-  geom_vline(xintercept = as.Date("2020-08-07"), linetype = "dashed") +
+  annotate("text", size = 4, label = "Rally Begins", x = as.Date("2021-08-06") - 1, y = 0.5, angle = "90") +
+  geom_vline(xintercept = as.Date("2021-08-06"), linetype = "dashed") +
   
-  annotate("text", size = 4, label = "Rally Ends", x = as.Date("2020-08-15"), y = 0.5, angle = "90") +
-  geom_vline(xintercept = as.Date("2020-08-16"), linetype = "dashed") +
+  annotate("text", size = 4, label = "Rally Ends", x = as.Date("2021-08-16") + 1, y = 0.5, angle = "90") +
+  geom_vline(xintercept = as.Date("2021-08-16"), linetype = "dashed") +
   
   scale_y_continuous(limits = c(0, 3)) + 
   
   facet_wrap(~ location) +
-  labs(title = "Rt estimate", x = "", y = "Rt")
-print(g)
+  labs(title = "", x = "", y = "Rt")
+print(g_rt)
+
+### Render the graph and done!
+g_num <-
+  ggplot(data = data %>% filter(dates >= as.Date("2021-06-08")), aes(x = as.Date(dates))) +
+  theme_linedraw() +
+  theme(strip.text.x = element_text(size = 16)) +
+  geom_bar(stat = "identity", aes(y = I), size = 1.0, color = "firebrick4", fill = "firebrick4") + 
+  
+  #annotate("text", size = 4, label = "Rally Begins", x = as.Date("2021-08-06") - 1, y = 0.5, angle = "90") +
+  #geom_vline(xintercept = as.Date("2021-08-06"), linetype = "dashed") +
+  
+  #annotate("text", size = 4, label = "Rally Ends", x = as.Date("2021-08-16") + 1, y = 0.5, angle = "90") +
+  #geom_vline(xintercept = as.Date("2021-08-16"), linetype = "dashed") +
+  
+  labs(title = "", x = "", y = "New Cases/Day")
+#print(g_num)
+
+plot_grid(g_rt, g_num, nrow = 2, ncol = 1, align = "hv", rel_heights = c(1, 0.3))
 

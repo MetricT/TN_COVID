@@ -8,9 +8,9 @@ latest_date <-
 
 new_vaccine_data <-
   vaccine_age_df %>%
-  select(Date, Count) %>%
+  select(Date, RECIPIENT_COUNT) %>%
   group_by(Date) %>% 
-  summarize(Count = sum(Count)) %>% 
+  summarize(Count = sum(RECIPIENT_COUNT, na.rm = TRUE)) %>% 
   ungroup() %>% 
   mutate(New_Count = c(0, diff(Count))) %>% 
   select(Date, New_Count) %>%
@@ -23,14 +23,8 @@ newvac_title <- paste("New Vaccines: ", new_vac, ", SMA: ", SMA_vac, sep = "")
 
 
 ### New Vaccines/Day
-graph_new_vaccine <- 
-  vaccine_age_df %>% 
-  select(Date, Count) %>%
-  group_by(Date) %>% 
-  summarize(Count = sum(Count)) %>% 
-  ungroup() %>% 
-  mutate(New_Count = c(0, diff(Count))) %>% 
-  select(Date, New_Count) %>% 
+graph_new_vaccine <-
+  new_vaccine_data %>%
   ggplot() +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -45,3 +39,4 @@ graph_new_vaccine <-
   scale_x_date(date_labels = "%m/%d") +
   labs(x = "", y  = "", title = newvac_title)
 print(graph_new_vaccine)
+

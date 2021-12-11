@@ -10,9 +10,9 @@ counties <- counties %>% arrange(County)
 vaccine_df <-
   vaccine_age_df %>% 
   filter(Date == latest_date) %>%
-  select(County, Count) %>% 
+  select(County, RECIPIENT_COUNT) %>% 
   group_by(County) %>% 
-  summarize(Vaccine_Count = sum(Count)) %>% 
+  summarize(Vaccine_Count = sum(RECIPIENT_COUNT, na.rm = TRUE)) %>% 
   ungroup() %>%
   mutate(County = str_to_lower(County))
 

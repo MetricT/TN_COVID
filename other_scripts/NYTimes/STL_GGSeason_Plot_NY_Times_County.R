@@ -36,7 +36,8 @@ data <-
   mutate(new_cases  = cases - lag(cases)) %>%
   select(-state, -county, -fips, -deaths, -cases) %>%
   filter(!is.na(new_cases)) %>%
-  as_tsibble(index = "date")
+  as_tsibble(index = "date") #%>% 
+  #filter(date >= as.Date("2021-04-01"))
 
 ### Decompose new cases using the STL() function from the "feasts"
 ### package, using a 7 day window for the trend, and seasonal periods of
@@ -44,13 +45,11 @@ data <-
 model_cases <-
   data %>%
   model(
-    STL(new_cases ~ trend(window = 7) +
-                    season(period = "week") +
-                    season(period = "month"), iterations = 100)
+    STL(new_cases ~ trend() + season(period = "week") + season(period = "month"), iterations = 100)
   ) %>% components()
 
 ### Graph the model.   Note that monthly
-g_stl <- model_cases %>% autoplot()
+g_stl <- model_cases %>% autoplot() + theme_bw()
 print(g_stl)
 
 ### Create a new tibble using the decomposed components
@@ -67,20 +66,24 @@ new_cases_tib <-
 ### Let's plot the weekly pattern
 g_week <-
   new_cases_tib %>%
-  mutate(date = as.Date(date) - lag) %>%
+  mutate(date = as.Date(date) + lag) %>%
   gg_season(s_week,  period = "1 week") +
+  theme_bw() + 
   xlab("Day of Week") +
   ylab("New cases") +
   ggtitle("Weekly Seasonal Component of New Infected")
+print(g_week)
 
 ### Let's plot the monthly pattern
 g_month <-
   new_cases_tib %>%
-  mutate(date = as.Date(date) - lag) %>%
+  mutate(date = as.Date(date) + lag) %>%
   gg_season(s_month,  period = "1 month") +
+  theme_bw() + 
   xlab("Day of Month") +
   ylab("New cases") +
   ggtitle("Monthly Seasonal Component of New Infected")
+print(g_month)
 
 ### Header/footer strings
 title_string <- paste("COVID-19 Infection Risk assuming ", lag, " day lag between infection and symptoms\n", my_county, " County, ", my_state, 
@@ -92,12 +95,13 @@ footer <- ggdraw() + draw_label(footer_string, size = 10)
 
 
 ### Let's smoosh it all together in one graph
-p_period <- plot_grid(g_week, g_month, nrow = 1, ncol = 2, align = "hv", axis = "lbrt")
+p_period <- plot_grid(g_week, g_month, nrow = 2, ncol = 1, align = "hv", axis = "lbrt")
 p_final <- 
   plot_grid(title,
-          g_stl,
-          p_period,
+          plot_grid(g_stl, p_period, nrow = 1, ncol = 2, rel_widths = c(1, 0.4)),
+#          p_period,
           footer,
-          axis = "lbrt", nrow = 4, ncol = 1, rel_heights = c(0.1, 1, 0.5, 0.05),
+          axis = "lbrt", nrow = 3, ncol = 1, rel_heights = c(0.1, 1, 0.05),
           align = "hv")
 print(p_final)
+

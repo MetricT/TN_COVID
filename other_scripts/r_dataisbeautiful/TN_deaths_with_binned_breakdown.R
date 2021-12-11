@@ -36,7 +36,7 @@ bins <-
 spreadsheet <- 
   "../Datasets/nytimes/covid-19-data/us-counties.csv" %>%
   read_csv(col_names = TRUE, col_types = "Dcccdd") %>%
-  filter(date >= as.Date("2021-03-01")) %>%
+  #filter(date >= as.Date("2021-03-01")) %>%
   mutate(state_fips = substr(fips, 1, 2)) %>%
   filter(!state_fips %in% c(69, 72, 78)) %>%
   filter(!is.na(state_fips)) %>%
@@ -50,7 +50,8 @@ spreadsheet <-
   mutate_if(is.numeric, ~ (replace_na(., 0))) %>% 
   mutate("cases_53061" = if_else(date == as.Date("2020-01-21"), 1, `cases_53061`)) %>%
   pivot_longer(-date, names_to = c("type", "fips"), names_sep = "_", values_to = "values") %>% 
-  pivot_wider(id_cols = c("date", "fips"), names_from = "type", values_from = "values")
+  pivot_wider(id_cols = c("date", "fips"), names_from = "type", values_from = "values") %>%
+  mutate(deaths = if_else(deaths < 0, 0, deaths))
   
 # Just pluck out TN
 spreadsheet <- 
@@ -259,18 +260,19 @@ y_max <- data %>% select(date, values) %>% filter(!is.na(values)) %>% group_by(d
 g_final_deaths <-
   g_deaths_stacked + 
   annotation_custom(ggplotGrob(g_deaths_stacked_per), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 50,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 50 + 60,
-                    ymin = 20,
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 340,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 340 + 180,
+                    ymin = 60,
                     ymax = y_max) +
   annotation_custom(ggplotGrob(g_map_tn_regions_deaths), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 130,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 130 + 85, 
-                    ymin = 64,
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 100,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 100 + 185, 
+                    ymin = 85,
                     ymax = y_max) + 
   annotation_custom(ggplotGrob(g_regional_curves_deaths), 
                     xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 0,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 0 + 50, 
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 0 + 100, 
                     ymin = 11,
                     ymax = y_max)
 print(g_final_deaths)
+

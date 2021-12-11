@@ -28,7 +28,7 @@ graph_new_hospital <-
   geom_line(data = hospital_data, color = graph_color, size = line_thickness,
             aes(x = as.Date(date) - 3, y = SMA(new_hospitalized, n = 7))) +
 
-  scale_x_date(#date_breaks = "3 days",
-    date_labels = "%m/%d") +
+  scale_x_date(date_breaks = "4 months",
+    date_labels = "%m/%y") +
   labs(title = newhos_title, x = "", y = "")
 print(graph_new_hospital)

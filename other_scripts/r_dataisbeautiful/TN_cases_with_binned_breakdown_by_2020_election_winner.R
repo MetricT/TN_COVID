@@ -279,24 +279,27 @@ print(g_cases_stacked_per)
 ### Put it all together
 ################################################################################
 
+### What's the highest value in the data
+y_max <- data %>% select(date, values) %>% filter(!is.na(values)) %>% group_by(date) %>% summarize(values = sum(values)) %>% pull("values") %>% max()
+
 g_final_cases <-
   g_cases_stacked + 
   annotation_custom(ggplotGrob(g_cases_stacked_per), 
-                               xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 330,
-                               xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 330 + 180,
-                               ymin = 5000,
-                               ymax = 9000) +
+                               xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 320,
+                               xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 320 + 180,
+                               ymin = y_max - 5000,
+                               ymax = y_max) +
   
   annotation_custom(ggplotGrob(g_map_tn_regions_cases), 
-                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 120,
-                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 120 + 150, 
-                    ymax = 10000,
-                    ymin = 6000) + 
+                    xmin = as.Date(data %>% head(n = 1) %>% pull("date")) + 105,
+                    xmax = as.Date(data %>% head(n = 1) %>% pull("date")) + 105 + 185, 
+                    ymin = y_max - 3000,
+                    ymax = y_max) + 
 
   annotation_custom(ggplotGrob(g_regional_curves_cases), 
                   xmin = as.Date(data %>% head(n = 1) %>% pull("date")) - 0,
                   xmax = as.Date(data %>% head(n = 1) %>% pull("date")) - 0 + 100, 
-                  ymin = 550,
-                  ymax = 9000)
+                  ymin = 750,
+                  ymax = y_max)
 print(g_final_cases)
   

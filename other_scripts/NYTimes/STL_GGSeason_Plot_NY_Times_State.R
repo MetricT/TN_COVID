@@ -47,7 +47,7 @@ model_cases <-
   ) %>% components()
 
 ### Graph the model.   Note that monthly
-g_stl <- model_cases %>% autoplot()
+g_stl <- model_cases %>% autoplot() + theme_bw()
 print(g_stl)
 
 ### Create a new tibble using the decomposed components
@@ -66,6 +66,7 @@ g_week <-
   new_cases_tib %>%
   mutate(date = as.Date(date) - lag) %>%
   gg_season(s_week,  period = "1 week") +
+  theme_bw() + 
   xlab("Day of Week") +
   ylab("New cases") +
   ggtitle("Weekly Seasonal Component of New Infections")
@@ -75,8 +76,8 @@ print(g_week)
 g_month <-
   new_cases_tib %>%
   mutate(date = as.Date(date) - lag) %>%
-  gg_season(s_month,
-            period = "1 month") +
+  gg_season(s_month, period = "1 month") +
+  theme_bw() + 
   xlab("Day of Month") +
   ylab("New cases") +
   ggtitle("Monthly Seasonal Component of New Infections")
@@ -92,11 +93,13 @@ title  <- ggdraw() + draw_label(title_string, fontface = "bold")
 footer <- ggdraw() + draw_label(footer_string, size = 10)
 
 ### Let's smoosh it all together in one graph
-p_period <- plot_grid(g_week, g_month, nrow = 1, ncol = 2, align = "hv", axis = "lbrt")
-p_final <-plot_grid(title,
-          g_stl,
-          p_period,
-          footer,
-          axis = "lbrt", nrow = 4, ncol = 1, rel_heights = c(0.13, 1, 1, 0.05),
-          align = "hv")
+p_period <- plot_grid(g_week, g_month, nrow = 2, ncol = 1, align = "hv", axis = "lbrt")
+p_final <- 
+  plot_grid(title,
+            plot_grid(g_stl, p_period, nrow = 1, ncol = 2, rel_widths = c(1, 0.4)),
+            #          p_period,
+            footer,
+            axis = "lbrt", nrow = 3, ncol = 1, rel_heights = c(0.1, 1, 0.05),
+            align = "hv")
 print(p_final)
+

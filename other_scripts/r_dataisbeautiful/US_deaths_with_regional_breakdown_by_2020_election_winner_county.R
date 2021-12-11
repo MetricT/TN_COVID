@@ -94,6 +94,14 @@ pres_2020 <-
     cum_percent < 0.8 ~ "Dem", 
     cum_percent <= 1  ~ "Very\nDem"))
 
+totals <-
+  spreadsheet %>% 
+  select(fips, cases, deaths) %>% 
+  group_by(fips) %>% 
+  summarize(total_cases = sum(cases), 
+            total_deaths = sum(deaths)) %>% 
+  ungroup()
+
 ################################################################################
 ### Take our spreadsheet data, filter it a bit (New Jersey uglied up the graph 
 ### a few weeks ago), and compute a 7-day simple moving average of the data
@@ -101,7 +109,8 @@ pres_2020 <-
 data <-
   spreadsheet %>%
   left_join(pres_2020, by = "fips") %>%
-  group_by(date, subtype) %>%
+  left_join(totals, by = "fips") #%>%
+   group_by(date, subtype) %>%
   summarize(deaths = sum(deaths, na.rm = TRUE)) %>%
   ungroup() %>%
   pivot_wider(id_cols = c("date"), names_from = "subtype", values_from = "deaths") %>%
@@ -128,13 +137,16 @@ g_regional_curves_deaths <-
   theme_bw() +
   theme(legend.position = "none") +
   theme(strip.background = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45)) +
+  theme(axis.text.x = element_text(vjust = 0.7)) +
+  theme(axis.text.x = element_text(hjust = 0.8)) +
 
   geom_line(aes(y = values), color = "black", size = 1) +
   geom_area(aes(fill = as.factor(subtype))) +
   
   labs(title = "Deaths by Political Lean", x = "", y = "") +
   scale_y_continuous(labels = scales::comma) +
-  scale_x_date(breaks = "6 months") + 
+  scale_x_date(breaks = "6 months", date_labels = "%Y-%m") + 
   
   scale_fill_manual(values = c("Very\nDem"       = "#0015BC",
                                "Dem"             = "#8bb1ff",
